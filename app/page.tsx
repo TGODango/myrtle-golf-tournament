@@ -1,0 +1,1747 @@
+"use client";
+import { useEffect, useState } from "react";
+import {
+  Flag,
+  Trophy,
+  ArrowUpRight,
+  ChevronRight,
+  Menu,
+  Check,
+  Wifi,
+  Plus,
+  Minus,
+} from "lucide-react";
+import {
+  State,
+  Match,
+  key,
+  result,
+  standings,
+  handicap,
+  strokes,
+} from "../lib/scoring";
+import { demo, blank } from "../lib/demo";
+import { cloud } from "../lib/cloud";
+const nav = [
+  "Home",
+  "Live Leaderboard",
+  "My Scorecard",
+  "Today's Matches",
+  "Schedule",
+  "Teams",
+  "Matchup Draft",
+  "Tournament Results",
+  "Admin Dashboard",
+];
+const formats = {
+  bestball: "Best Ball Match Play",
+  stableford: "Combined Stableford",
+  shamble: "Shamble Match Play",
+  singles: "Singles Match Play",
+};
+export default function App() {
+  const [s, setS] = useState<State>(demo),
+    [page, setPage] = useState("Home"),
+    [mode, setMode] = useState<"demo" | "cloud">("demo"),
+    [round, setRound] = useState("r0"),
+    [player, setPlayer] = useState("p0"),
+    [hole, setHole] = useState(0),
+    [gross, setGross] = useState(4),
+    [notice, setNotice] = useState(""),
+    [email, setEmail] = useState(""),
+    [user, setUser] = useState(""),
+    [role, setRole] = useState("golfer"),
+    [rev, setRev] = useState(0),
+    [online, setOnline] = useState(true),
+    [tv, setTv] = useState(false),
+    [mobile, setMobile] = useState(false),
+    [pending, setPending] = useState<
+      {
+        match: string;
+        player: string;
+        hole: number;
+        gross: number;
+        expected: number;
+        request: string;
+      }[]
+    >([]);
+  const admin = mode === "demo" || role === "admin";
+  const captain = admin || role === "captain";
+  useEffect(() => {
+    const saved = localStorage.getItem("myrtle-demo-v1");
+    if (saved)
+      try {
+        setS(JSON.parse(saved));
+      } catch {}
+    const receive = (e: StorageEvent) => {
+      if (e.key === "myrtle-demo-v1" && e.newValue)
+        setS(JSON.parse(e.newValue));
+    };
+    window.addEventListener("storage", receive);
+    const change = () => setOnline(navigator.onLine);
+    window.addEventListener("online", change);
+    window.addEventListener("offline", change);
+    return () => {
+      window.removeEventListener("storage", receive);
+      window.removeEventListener("online", change);
+      window.removeEventListener("offline", change);
+    };
+  }, []);
+  useEffect(() => {
+    if (mode === "demo")
+      localStorage.setItem("myrtle-demo-v1", JSON.stringify(s));
+  }, [s, mode]);
+  useEffect(() => {
+    const saved = localStorage.getItem("myrtle-score-queue");
+    if (saved)
+      try {
+        setPending(JSON.parse(saved));
+      } catch {}
+  }, []);
+  useEffect(() => {
+    localStorage.setItem("myrtle-score-queue", JSON.stringify(pending));
+  }, [pending]);
+  async function load() {
+    if (!cloud) return;
+    const { data, error } = await cloud.rpc("read_tournament");
+    if (error) {
+      setNotice(error.message);
+      return;
+    }
+    if (data) {
+      setS(data.state);
+      setRev(data.revision);
+    }
+  }
+  useEffect(() => {
+    if (mode !== "cloud" || !cloud) return;
+    const client = cloud;
+    client.auth.getUser().then(async ({ data }) => {
+      if (data.user) {
+        setUser(data.user.id);
+        const { data: p } = await client
+          .from("members")
+          .select("player_id,role")
+          .eq("user_id", data.user.id)
+          .single();
+        if (p) {
+          setPlayer(p.player_id);
+          setRole(p.role);
+        }
+        await load();
+      }
+    });
+    const { data: auth } = client.auth.onAuthStateChange(() => {
+      setTimeout(async () => {
+        const { data } = await client.auth.getUser();
+        setUser(data.user?.id ?? "");
+        if (data.user) {
+          const { data: p } = await client
+            .from("members")
+            .select("player_id,role")
+            .eq("user_id", data.user.id)
+            .single();
+          if (p) {
+            setPlayer(p.player_id);
+            setRole(p.role);
+          }
+          load();
+        }
+      }, 0);
+    });
+    const channel = client
+      .channel("tournament")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "tournaments" },
+        () => load(),
+      )
+      .subscribe();
+    return () => {
+      client.removeChannel(channel);
+      auth.subscription.unsubscribe();
+    };
+  }, [mode]);
+  async function send(item: (typeof pending)[number]) {
+    if (!cloud) return false;
+    const { error } = await cloud.rpc("submit_score", {
+      p_match: item.match,
+      p_player: item.player,
+      p_hole: item.hole,
+      p_gross: item.gross,
+      p_expected: item.expected,
+      p_request: item.request,
+    });
+    if (error) {
+      setNotice(
+        `Score not saved: ${error.message}. Your pending score remains available; review before retrying.`,
+      );
+      return false;
+    }
+    await load();
+    setNotice("Score saved to tournament");
+    return true;
+  }
+  useEffect(() => {
+    if (mode !== "cloud" || !online || !user || !pending.length) return;
+    let cancelled = false;
+    (async () => {
+      const item = pending[0];
+      if ((await send(item)) && !cancelled)
+        setPending((q) => q.filter((x) => x.request !== item.request));
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [mode, online, user, pending.length, pending[0]?.request]);
+  async function update(next: State, message: string) {
+    next = {
+      ...next,
+      audit: [{ at: new Date().toISOString(), message }, ...next.audit],
+    };
+    if (mode === "demo") {
+      setS(next);
+      setNotice("Saved in demo");
+      return;
+    }
+    if (!cloud || !admin) {
+      setNotice("Administrator access required");
+      return;
+    }
+    const { error } = await cloud.rpc("update_tournament", {
+      p_state: next,
+      p_expected: rev,
+    });
+    if (error) {
+      setNotice(`Changes not saved: ${error.message}`);
+      await load();
+    } else {
+      await load();
+      setNotice("Tournament saved");
+    }
+  }
+  const localDate = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/New_York",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+  const localTime = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "America/New_York",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(new Date());
+  const roundDates = s.rounds.map((x) => x.date).join(",");
+  useEffect(() => {
+    if (page === "Home") {
+      const today = s.rounds.filter((x) => x.date === localDate);
+      if (today.length) {
+        const upcoming = today.find((x) => x.times.some((t) => t >= localTime));
+        setRound((upcoming ?? today[today.length - 1]).id);
+      }
+    }
+  }, [page, roundDates, localDate]);
+  const totals = standings(s),
+    r = s.rounds.find((x) => x.id === round) ?? s.rounds[0],
+    matches = s.matches.filter((m) => m.round === r.id),
+    mine = matches.find((m) => [...m.a, ...m.b].includes(player));
+  const names = (ids: string[]) =>
+    ids
+      .map((id) => s.players.find((p) => p.id === id)?.name ?? "Unassigned")
+      .join(" / ");
+  function card(m: Match) {
+    const x = result(s, m);
+    return (
+      <article className="match" key={m.id}>
+        <div className="eyebrow">
+          {s.rounds.find((r) => r.id === m.round)?.name}{" "}
+          <span>
+            {x.complete ? "FINAL" : x.played ? `THRU ${x.played}` : "UPCOMING"}
+          </span>
+        </div>
+        <div className="versus">
+          <b>{names(m.a)}</b>
+          <small>VS</small>
+          <b>{names(m.b)}</b>
+        </div>
+        {s.rounds.find((r) => r.id === m.round)?.format === "stableford" && (
+          <p className="individual-points">
+            {[...m.a, ...m.b]
+              .map((id) => `${names([id])}: ${x.individual[id] ?? 0} pts`)
+              .join(" · ")}
+          </p>
+        )}
+        <div className="match-bottom">
+          <strong>{x.status}</strong>
+          <span>
+            {x.complete
+              ? `${x.points[0]} – ${x.points[1]} points`
+              : s.rounds.find((r) => r.id === m.round)?.times[m.slot]}
+          </span>
+        </div>
+      </article>
+    );
+  }
+  async function saveScore() {
+    if (!mine) return;
+    if (
+      !r.locked ||
+      !mine.approved ||
+      r.holes.length !== 18 ||
+      (mode === "cloud" && !r.verified)
+    ) {
+      setNotice(
+        "Approved, locked pairings and a verified 18-hole scorecard are required",
+      );
+      return;
+    }
+    const k = key(mine.id, player, hole),
+      expected = s.scores[k]?.version ?? 0;
+    if (mode === "demo") {
+      const latest = JSON.parse(
+        localStorage.getItem("myrtle-demo-v1") ?? JSON.stringify(s),
+      );
+      if ((latest.scores[k]?.version ?? 0) !== expected) {
+        setS(latest);
+        setNotice(
+          "Conflict: score changed on another tab. Review it before saving.",
+        );
+        return;
+      }
+      await update(
+        {
+          ...s,
+          scores: { ...s.scores, [k]: { gross, version: expected + 1 } },
+        },
+        `${names([player])}: hole ${hole + 1} → ${gross}`,
+      );
+    } else {
+      setPending((q) => [
+        ...q,
+        {
+          match: mine.id,
+          player,
+          hole,
+          gross,
+          expected,
+          request: crypto.randomUUID(),
+        },
+      ]);
+      setNotice("Score queued securely for synchronization");
+    }
+  }
+  function roundPicker() {
+    return (
+      <div className="tabs">
+        {s.rounds.map((x, i) => (
+          <button
+            className={round === x.id ? "selected" : ""}
+            key={x.id}
+            onClick={() => {
+              setRound(x.id);
+              setHole(0);
+            }}
+          >
+            R{i + 1} · {x.name}
+          </button>
+        ))}
+      </div>
+    );
+  }
+  return (
+    <div
+      className={tv ? "shell tv" : "shell"}
+      style={
+        {
+          "--team-a": s.teams[0].color,
+          "--team-b": s.teams[1].color,
+        } as React.CSSProperties
+      }
+    >
+      {!tv && (
+        <aside className={mobile ? "open" : ""}>
+          <div className="brand">
+            <Flag size={28} />
+            <div>
+              MYRTLE BEACH<small>GOLF CHAMPIONSHIP</small>
+            </div>
+          </div>
+          <div className="edition">THE 2026 EDITION</div>
+          <nav>
+            {nav.map((n, i) => (
+              <button
+                className={page === n ? "active" : ""}
+                key={n}
+                onClick={() => {
+                  setPage(n);
+                  setMobile(false);
+                }}
+              >
+                <span>{["◈", "▥", "▤", "⚑", "▦", "♧", "⇄", "♜", "⚙"][i]}</span>
+                {n}
+              </button>
+            ))}
+          </nav>
+          <div className="sidebar-footer">
+            <div className="avatar">MB</div>
+            <b>Five rounds. One champion.</b>
+            <small>Myrtle Beach, South Carolina</small>
+          </div>
+        </aside>
+      )}
+      <main>
+        <header>
+          <button className="mobile-menu" onClick={() => setMobile(!mobile)}>
+            <Menu />
+          </button>
+          <span>
+            MYRTLE BEACH <span className="muted">/ {page}</span>
+          </span>
+          <div>
+            <span className="connection">
+              <i />
+              {mode === "demo" ? "DEMO MODE" : online ? "CONNECTED" : "OFFLINE"}
+            </span>
+            <button
+              onClick={() => {
+                if (!cloud) {
+                  setNotice(
+                    "Configure Supabase environment variables to connect the live tournament",
+                  );
+                  return;
+                }
+                setMode(mode === "demo" ? "cloud" : "demo");
+                if (mode === "demo") setS(blank());
+                else
+                  setS(
+                    JSON.parse(
+                      localStorage.getItem("myrtle-demo-v1") ??
+                        JSON.stringify(demo()),
+                    ),
+                  );
+              }}
+            >
+              {mode === "demo" ? "Connect live" : "View demo"}
+            </button>
+          </div>
+        </header>
+        <div className="content">
+          {mode === "demo" && (
+            <div className="demo-banner">
+              DEMONSTRATION · Sample players and illustrative course data.
+              Results are separate from your live tournament.
+            </div>
+          )}
+          {notice && (
+            <div className="notice" role="status">
+              {notice}
+              <button onClick={() => setNotice("")}>×</button>
+            </div>
+          )}
+          {mode === "cloud" && !user ? (
+            <section className="panel">
+              <h1>Your championship starts here.</h1>
+              <p>Sign in using the email assigned to your player invitation.</p>
+              <input
+                type="email"
+                placeholder="Your email address"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+              <button
+                className="primary"
+                onClick={async () => {
+                  const { error } = await cloud!.auth.signInWithOtp({
+                    email,
+                    options: {
+                      shouldCreateUser: false,
+                      emailRedirectTo: location.origin,
+                    },
+                  });
+                  setNotice(
+                    error?.message ??
+                      "Check your email for a secure sign-in link",
+                  );
+                }}
+              >
+                Send sign-in link
+              </button>
+            </section>
+          ) : (
+            <>
+              <div className="page-title">
+                <div>
+                  <div className="eyebrow">
+                    OCTOBER TRADITION. CHAMPIONSHIP AMBITION.
+                  </div>
+                  <h1>{page === "Home" ? "The road to 9½." : page}</h1>
+                  <p>
+                    Myrtle Beach Golf Championship 2026 <span>•</span> 12
+                    golfers <span>•</span> 5 rounds <span>•</span> 18 points
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    setTv(!tv);
+                    setPage("Live Leaderboard");
+                    if (!tv)
+                      document.documentElement
+                        .requestFullscreen?.()
+                        .catch(() => {});
+                    else if (document.fullscreenElement)
+                      document.exitFullscreen?.();
+                  }}
+                >
+                  {tv ? "Exit TV mode" : "TV leaderboard"}{" "}
+                  <ArrowUpRight size={15} />
+                </button>
+              </div>
+              {["Home", "Live Leaderboard", "Tournament Results"].includes(
+                page,
+              ) && (
+                <>
+                  <section className="scoreboard">
+                    <div className="scoreboard-top">
+                      <span>
+                        <i />{" "}
+                        {totals.winner
+                          ? "TOURNAMENT RESULT"
+                          : "LIVE TOURNAMENT STANDINGS"}
+                      </span>
+                      <span>FIRST TO 9½ WINS</span>
+                    </div>
+                    <div className="score-line">
+                      <div className="team team-a">
+                        <div className="crest">
+                          {s.teams[0].name.slice(0, 1)}
+                        </div>
+                        <div>
+                          <small>TEAM A</small>
+                          <h2>{s.teams[0].name}</h2>
+                        </div>
+                      </div>
+                      <div className="points">
+                        {totals.official[0]}
+                        <span>—</span>
+                        {totals.official[1]}
+                      </div>
+                      <div className="team team-b">
+                        <div>
+                          <small>TEAM B</small>
+                          <h2>{s.teams[1].name}</h2>
+                        </div>
+                        <div className="crest">
+                          {s.teams[1].name.slice(0, 1)}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="race">
+                      <div
+                        style={{ width: `${(totals.official[0] / 18) * 100}%` }}
+                      />
+                      <span
+                        style={{ width: `${(totals.official[1] / 18) * 100}%` }}
+                      />
+                    </div>
+                    <div className="scoreboard-bottom">
+                      <span>
+                        {totals.winner ??
+                          (totals.official[0] === totals.official[1]
+                            ? "The championship is level"
+                            : `${s.teams[totals.official[0] > totals.official[1] ? 0 : 1].name} leads the championship`)}
+                      </span>
+                      <small>{totals.remaining} POINTS STILL AVAILABLE</small>
+                    </div>
+                  </section>
+                  <div className="stats">
+                    <div>
+                      <small>MATCHES COMPLETE</small>
+                      <b>
+                        {totals.complete}
+                        <span> / 18</span>
+                      </b>
+                    </div>
+                    <div>
+                      <small>PROJECTED IF LEADS HOLD</small>
+                      <b>
+                        {totals.projected[0]} <span>—</span>{" "}
+                        {totals.projected[1]}
+                      </b>
+                      <small>Projection only · excludes unplayed matches</small>
+                    </div>
+                    <div>
+                      <small>POINTS NEEDED TO WIN</small>
+                      <b>
+                        {Math.max(0, 9.5 - totals.official[0])} <span>/</span>{" "}
+                        {Math.max(0, 9.5 - totals.official[1])}
+                      </b>
+                    </div>
+                  </div>
+                </>
+              )}
+              {page === "Home" && (
+                <>
+                  <div className="section-heading">
+                    <h2>On the course</h2>
+                    <button onClick={() => setPage("Today's Matches")}>
+                      All matches <ChevronRight size={16} />
+                    </button>
+                  </div>
+                  <div className="home-grid">
+                    <section className="course-feature">
+                      <div className="eyebrow">
+                        ROUND {s.rounds.indexOf(r) + 1} ·{" "}
+                        {r.date || "DATE TO BE CONFIRMED"}
+                      </div>
+                      <Flag size={40} />
+                      <h2>{r.name}</h2>
+                      <p>{formats[r.format]}</p>
+                      <div className="course-meta">
+                        <span>
+                          NEXT TEE TIME
+                          <b>
+                            {r.date === localDate
+                              ? (r.times.find((t) => t >= localTime) ??
+                                "All started")
+                              : r.times[0]}
+                          </b>
+                          <small>America/New_York</small>
+                        </span>
+                        <button
+                          className="primary"
+                          onClick={() => setPage("My Scorecard")}
+                        >
+                          Enter scores <ArrowUpRight size={18} />
+                        </button>
+                      </div>
+                    </section>
+                    <div className="match-list">
+                      {matches.slice(0, 3).map(card)}
+                    </div>
+                  </div>
+                  <div className="section-heading">
+                    <h2>The championship journey</h2>
+                    <button onClick={() => setPage("Schedule")}>
+                      Full schedule <ChevronRight size={16} />
+                    </button>
+                  </div>
+                  <div className="journey">
+                    {s.rounds.map((r, i) => (
+                      <button
+                        key={r.id}
+                        onClick={() => {
+                          setRound(r.id);
+                          setPage("Today's Matches");
+                        }}
+                      >
+                        <small>ROUND 0{i + 1}</small>
+                        <h3>{r.name}</h3>
+                        <p>{formats[r.format]}</p>
+                        <b>
+                          {i === 4 ? "6" : "3"} points{" "}
+                          <ArrowUpRight size={14} />
+                        </b>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+              {[
+                "Live Leaderboard",
+                "Today's Matches",
+                "Tournament Results",
+              ].includes(page) && (
+                <>
+                  {page === "Tournament Results" && (
+                    <section className="panel">
+                      <h2>Round-by-round results</h2>
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>Round</th>
+                            <th>{s.teams[0].name}</th>
+                            <th>{s.teams[1].name}</th>
+                            <th>Completed</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {s.rounds.map((rr, i) => {
+                            const results = s.matches
+                              .filter((m) => m.round === rr.id)
+                              .map((m) => result(s, m));
+                            return (
+                              <tr key={rr.id}>
+                                <th>
+                                  {i + 1} · {rr.name}
+                                </th>
+                                <td>
+                                  {results.reduce((v, x) => v + x.points[0], 0)}
+                                </td>
+                                <td>
+                                  {results.reduce((v, x) => v + x.points[1], 0)}
+                                </td>
+                                <td>
+                                  {results.filter((x) => x.complete).length} /{" "}
+                                  {rr.format === "singles" ? 6 : 3}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </section>
+                  )}
+                  {roundPicker()}
+                  <div className="match-grid">{matches.map(card)}</div>
+                  {!matches.length && <p>Pairings have not been assigned.</p>}
+                </>
+              )}
+              {page === "My Scorecard" && (
+                <>
+                  {roundPicker()}
+                  <section className="panel">
+                    {mode === "demo" || admin ? (
+                      <label>
+                        Scoring as{" "}
+                        <select
+                          value={player}
+                          onChange={(e) => setPlayer(e.target.value)}
+                        >
+                          {s.players.map((p) => (
+                            <option value={p.id} key={p.id}>
+                              {p.name}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    ) : (
+                      <h2>{names([player])}</h2>
+                    )}
+                    {mine && r.holes.length === 18 ? (
+                      <>
+                        <div className="section-heading">
+                          <h2>{r.name}</h2>
+                          <span>{result(s, mine).status}</span>
+                        </div>
+                        <div className="hole-nav">
+                          {r.holes.map((_, i) => (
+                            <button
+                              className={hole === i ? "selected" : ""}
+                              key={i}
+                              onClick={() => {
+                                setHole(i);
+                                setGross(
+                                  s.scores[key(mine.id, player, i)]?.gross ??
+                                    r.holes[i].par,
+                                );
+                              }}
+                            >
+                              {i + 1}
+                              {s.scores[key(mine.id, player, i)] && (
+                                <Check size={10} />
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                        <div className="score-entry">
+                          <div className="eyebrow">
+                            HOLE {hole + 1} · PAR {r.holes[hole].par} · SI{" "}
+                            {r.holes[hole].rank} · {r.holes[hole].yards} YDS
+                          </div>
+                          <p>
+                            Course handicap{" "}
+                            {handicap(
+                              s.players.find((p) => p.id === player)!,
+                              r,
+                            )}{" "}
+                            · Strokes on this hole:{" "}
+                            {strokes(
+                              handicap(
+                                s.players.find((p) => p.id === player)!,
+                                r,
+                              ) -
+                                (r.format === "stableford"
+                                  ? 0
+                                  : Math.min(
+                                      ...[...mine.a, ...mine.b].map((id) =>
+                                        handicap(
+                                          s.players.find((p) => p.id === id)!,
+                                          r,
+                                        ),
+                                      ),
+                                    )),
+                              r.holes[hole].rank,
+                            )}
+                          </p>
+                          <div className="stepper">
+                            <button
+                              aria-label="Decrease gross score"
+                              onClick={() => setGross(Math.max(1, gross - 1))}
+                            >
+                              <Minus />
+                            </button>
+                            <div>
+                              {gross}
+                              <small>GROSS SCORE</small>
+                            </div>
+                            <button
+                              aria-label="Increase gross score"
+                              onClick={() => setGross(Math.min(30, gross + 1))}
+                            >
+                              <Plus />
+                            </button>
+                          </div>
+                          <p>
+                            Currently saved:{" "}
+                            {s.scores[key(mine.id, player, hole)]?.gross ?? "—"}
+                          </p>
+                          <button className="primary" onClick={saveScore}>
+                            <Check size={18} /> Save hole {hole + 1}
+                          </button>
+                          {pending.length > 0 && (
+                            <p>
+                              {pending.length} pending score(s).{" "}
+                              <button
+                                onClick={() => {
+                                  const item = pending[0];
+                                  setPending((q) => [
+                                    {
+                                      ...item,
+                                      expected:
+                                        s.scores[
+                                          key(
+                                            item.match,
+                                            item.player,
+                                            item.hole,
+                                          )
+                                        ]?.version ?? 0,
+                                      request: crypto.randomUUID(),
+                                    },
+                                    ...q.slice(1),
+                                  ]);
+                                }}
+                              >
+                                Review saved score above, then retry my pending
+                                score
+                              </button>
+                              <button onClick={() => setPending([])}>
+                                Discard pending scores
+                              </button>
+                            </p>
+                          )}
+                        </div>
+                        <div className="table-scroll">
+                          <table>
+                            <thead>
+                              <tr>
+                                <th>Foursome</th>
+                                {r.holes.map((_, i) => (
+                                  <th key={i}>{i + 1}</th>
+                                ))}
+                                <th>Total</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {[...mine.a, ...mine.b].map((id) => (
+                                <tr key={id}>
+                                  <th>{names([id])}</th>
+                                  {r.holes.map((_, i) => (
+                                    <td key={i}>
+                                      {s.scores[key(mine.id, id, i)]?.gross ??
+                                        "—"}
+                                    </td>
+                                  ))}
+                                  <td>
+                                    {r.holes.reduce(
+                                      (v, _, i) =>
+                                        v +
+                                        (s.scores[key(mine.id, id, i)]?.gross ??
+                                          0),
+                                      0,
+                                    )}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </>
+                    ) : (
+                      <p>Your match or course scorecard is not ready yet.</p>
+                    )}
+                  </section>
+                </>
+              )}
+              {page === "Schedule" && (
+                <div className="schedule">
+                  {s.rounds.map((x, i) => (
+                    <section className="panel" key={x.id}>
+                      <div className="eyebrow">
+                        ROUND 0{i + 1} · {i === 4 ? 6 : 3} POINTS
+                      </div>
+                      <h2>{x.name}</h2>
+                      <p>{formats[x.format]}</p>
+                      <p>
+                        {x.date || "Calendar date to be confirmed"} ·
+                        America/New_York
+                      </p>
+                      <div className="tee-times">
+                        {x.times.map((t, j) => (
+                          <div key={j}>
+                            <b>{t}</b>
+                            {s.matches
+                              .filter((m) => m.round === x.id && m.slot === j)
+                              .map((m) => (
+                                <small key={m.id}>
+                                  {names(m.a)} vs. {names(m.b)}
+                                </small>
+                              ))}
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+                  ))}
+                </div>
+              )}
+              {page === "Teams" && (
+                <div className="team-grid">
+                  {s.teams.map((t, i) => (
+                    <section className="panel" key={i}>
+                      <div className="eyebrow">
+                        TEAM {i === 0 ? "A" : "B"} ·{" "}
+                        {s.players.filter((p) => p.team === i).length} / 6
+                        GOLFERS
+                      </div>
+                      <h2 style={{ color: t.color }}>{t.name}</h2>
+                      {s.players
+                        .filter((p) => p.team === i)
+                        .map((p) => {
+                          const rec = s.matches
+                            .filter((m) => [...m.a, ...m.b].includes(p.id))
+                            .map((m) => result(s, m))
+                            .filter((x) => x.complete);
+                          return (
+                            <div className="player-row" key={p.id}>
+                              <div className="avatar">
+                                {p.avatar ? (
+                                  <img src={p.avatar} alt="" />
+                                ) : (
+                                  p.name
+                                    .split(" ")
+                                    .map((n) => n[0])
+                                    .join("")
+                                )}
+                              </div>
+                              <div>
+                                <b>
+                                  {p.name} {p.captain && "★"}
+                                </b>
+                                <small>
+                                  {p.captain ? "Captain · " : ""}Index{" "}
+                                  {p.index.toFixed(1)} ·{" "}
+                                  {rec.filter((x) => x.points[i] === 1).length}W
+                                  /{" "}
+                                  {rec.filter((x) => x.points[i] === 0).length}L
+                                  /{" "}
+                                  {
+                                    rec.filter((x) => x.points[i] === 0.5)
+                                      .length
+                                  }
+                                  T
+                                </small>
+                                <small>
+                                  Stableford:{" "}
+                                  {s.matches
+                                    .filter(
+                                      (m) =>
+                                        m.round ===
+                                          s.rounds.find(
+                                            (r) => r.format === "stableford",
+                                          )?.id &&
+                                        [...m.a, ...m.b].includes(p.id),
+                                    )
+                                    .reduce(
+                                      (v, m) =>
+                                        v +
+                                        (result(s, m).individual[p.id] ?? 0),
+                                      0,
+                                    )}
+                                </small>
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </section>
+                  ))}
+                </div>
+              )}
+              {page === "Matchup Draft" && (
+                <>
+                  {roundPicker()}
+                  <section className="panel">
+                    <h2>Captain’s matchup desk</h2>
+                    <p>
+                      Nominate a {r.format === "singles" ? "golfer" : "pair"},
+                      then have the opposing captain select the challengers.
+                      Drafts stay editable until administrator approval.
+                    </p>
+                    {captain && !r.locked ? (
+                      <Draft
+                        state={s}
+                        round={round}
+                        role={role}
+                        player={player}
+                        onSave={(m) => {
+                          const next = {
+                            ...s,
+                            matches: [
+                              ...s.matches.filter((x) => x.id !== m.id),
+                              m,
+                            ],
+                          };
+                          if (mode === "demo" || admin)
+                            update(next, "Pairing draft saved");
+                          else
+                            cloud!
+                              .rpc("save_draft", { p_match: m })
+                              .then(({ error }) => {
+                                setNotice(error?.message ?? "Draft saved");
+                                load();
+                              });
+                        }}
+                      />
+                    ) : (
+                      <p>
+                        {r.locked
+                          ? "Pairings are locked. An administrator can reopen the draft."
+                          : "Captain access required."}
+                      </p>
+                    )}
+                    {matches.map(card)}
+                    {admin && (
+                      <button
+                        className="primary"
+                        onClick={() => {
+                          const assigned = matches.flatMap((m) => [
+                            ...m.a,
+                            ...m.b,
+                          ]);
+                          if (
+                            !r.locked &&
+                            (matches.length !==
+                              (r.format === "singles" ? 6 : 3) ||
+                              new Set(assigned).size !== 12 ||
+                              s.players.length !== 12 ||
+                              s.teams.some(
+                                (_, i) =>
+                                  s.players.filter((p) => p.team === i)
+                                    .length !== 6 ||
+                                  s.players.filter(
+                                    (p) => p.team === i && p.captain,
+                                  ).length !== 1,
+                              ) ||
+                              matches.some(
+                                (m) =>
+                                  m.a.length !==
+                                    (r.format === "singles" ? 1 : 2) ||
+                                  m.b.length !==
+                                    (r.format === "singles" ? 1 : 2) ||
+                                  m.a.some(
+                                    (id) =>
+                                      s.players.find((p) => p.id === id)
+                                        ?.team !== 0,
+                                  ) ||
+                                  m.b.some(
+                                    (id) =>
+                                      s.players.find((p) => p.id === id)
+                                        ?.team !== 1,
+                                  ),
+                              ) ||
+                              [0, 1, 2].some(
+                                (slot) =>
+                                  matches.filter((m) => m.slot === slot)
+                                    .length !==
+                                  (r.format === "singles" ? 2 : 1),
+                              ))
+                          ) {
+                            setNotice(
+                              "Require 12 unique golfers, six per team, one captain per team, and all matches complete",
+                            );
+                            return;
+                          }
+                          update(
+                            {
+                              ...s,
+                              rounds: s.rounds.map((x) =>
+                                x.id === round
+                                  ? { ...x, locked: !x.locked }
+                                  : x,
+                              ),
+                              matches: s.matches.map((m) =>
+                                m.round === round
+                                  ? { ...m, approved: !r.locked }
+                                  : m,
+                              ),
+                            },
+                            r.locked
+                              ? "Pairings unlocked"
+                              : "Pairings approved and locked",
+                          );
+                        }}
+                      >
+                        {r.locked
+                          ? "Unlock pairings"
+                          : "Approve and lock pairings"}
+                      </button>
+                    )}
+                  </section>
+                </>
+              )}
+              {page === "Admin Dashboard" &&
+                (admin ? (
+                  <Admin
+                    state={s}
+                    onSave={update}
+                    round={round}
+                    setRound={setRound}
+                    mode={mode}
+                  />
+                ) : (
+                  <section className="panel">
+                    Administrator authorization required.
+                  </section>
+                ))}
+            </>
+          )}
+          <footer>
+            <Flag size={16} /> MYRTLE BEACH 2026{" "}
+            <span>Good golf. Great company. A little friendly rivalry.</span>
+          </footer>
+        </div>
+      </main>
+    </div>
+  );
+}
+function Draft({
+  state: s,
+  round,
+  role,
+  player,
+  onSave,
+}: {
+  state: State;
+  round: string;
+  role: string;
+  player: string;
+  onSave: (m: Match) => void;
+}) {
+  const r = s.rounds.find((x) => x.id === round)!;
+  const [slot, setSlot] = useState(0),
+    [first, setFirst] = useState<0 | 1>(0),
+    [a, setA] = useState<string[]>([]),
+    [b, setB] = useState<string[]>([]);
+  const size = r.format === "singles" ? 1 : 2;
+  const existing = s.matches.find(
+    (m) =>
+      m.round === round &&
+      (m.position ?? Number(m.id.split("-").at(-1))) === slot,
+  );
+  useEffect(() => {
+    setA(existing?.a ?? []);
+    setB(existing?.b ?? []);
+    setFirst(existing?.nomination ?? r.nomination ?? 0);
+  }, [
+    round,
+    slot,
+    existing?.id,
+    existing?.a.join(","),
+    existing?.b.join(","),
+    r.nomination,
+  ]);
+  const team = s.players.find((p) => p.id === player)?.team;
+  return (
+    <div className="draft">
+      <label>
+        Match number
+        <select
+          value={slot}
+          onChange={(e) => {
+            setSlot(+e.target.value);
+            setA([]);
+            setB([]);
+          }}
+        >
+          {Array.from({ length: size === 1 ? 6 : 3 }, (_, i) => (
+            <option key={i} value={i}>
+              Match {i + 1}
+            </option>
+          ))}
+        </select>
+      </label>
+      {role === "admin" || role === "golfer" ? (
+        <label>
+          Nominating team
+          <select
+            value={first}
+            onChange={(e) => setFirst(+e.target.value as 0 | 1)}
+          >
+            {s.teams.map((t, i) => (
+              <option key={i} value={i}>
+                {t.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      ) : (
+        <p>Nominating team: {s.teams[existing?.nomination ?? first].name}</p>
+      )}
+      {s.teams.map((t, i) => (
+        <fieldset key={i}>
+          <legend>
+            {t.name} · select {size}
+          </legend>
+          {s.players
+            .filter((p) => p.team === i)
+            .map((p) => (
+              <label key={p.id}>
+                <input
+                  type="checkbox"
+                  checked={(i === 0 ? a : b).includes(p.id)}
+                  disabled={
+                    role === "captain" &&
+                    (team !== i || (i !== first && !existing))
+                  }
+                  onChange={(e) => {
+                    const v = i === 0 ? a : b;
+                    const next = e.target.checked
+                      ? [...v, p.id]
+                      : v.filter((id) => id !== p.id);
+                    if (next.length <= size) (i === 0 ? setA : setB)(next);
+                  }}
+                />
+                {p.name}
+              </label>
+            ))}
+        </fieldset>
+      ))}
+      <button
+        className="primary"
+        onClick={() => {
+          const aa = role === "captain" && team === 1 ? (existing?.a ?? []) : a;
+          const bb = role === "captain" && team === 0 ? (existing?.b ?? []) : b;
+          if ((first === 0 ? aa : bb).length !== size) return;
+          onSave({
+            id: existing?.id ?? `draft-${round}-${slot}`,
+            round,
+            a: aa,
+            b: bb,
+            position: slot,
+            slot: existing?.slot ?? (size === 1 ? Math.floor(slot / 2) : slot),
+            approved: false,
+            nomination: first,
+          });
+        }}
+      >
+        Save matchup draft
+      </button>
+    </div>
+  );
+}
+function Admin({
+  state: s,
+  onSave,
+  round,
+  setRound,
+  mode,
+}: {
+  state: State;
+  onSave: (s: State, message: string) => void;
+  round: string;
+  setRound: (s: string) => void;
+  mode: string;
+}) {
+  const [edit, setEdit] = useState(s),
+    [json, setJson] = useState(""),
+    [error, setError] = useState("");
+  useEffect(() => setEdit(s), [s]);
+  const r = edit.rounds.find((x) => x.id === round)!;
+  const modify = (v: Partial<typeof r>) =>
+    setEdit({
+      ...edit,
+      rounds: edit.rounds.map((x) => (x.id === round ? { ...x, ...v } : x)),
+    });
+  return (
+    <div className="admin">
+      <section className="panel">
+        <h2>Teams & roster</h2>
+        <p>
+          Enter six golfers per team and choose one captain each. Course
+          handicap overrides use the round ID (r0–r4).
+        </p>
+        {edit.teams.map((t, i) => (
+          <div className="form-row" key={i}>
+            <input
+              aria-label="Team name"
+              value={t.name}
+              onChange={(e) =>
+                setEdit({
+                  ...edit,
+                  teams: edit.teams.map((x, j) =>
+                    j === i ? { ...x, name: e.target.value } : x,
+                  ),
+                })
+              }
+            />
+            <input
+              type="color"
+              aria-label="Team color"
+              value={t.color}
+              onChange={(e) =>
+                setEdit({
+                  ...edit,
+                  teams: edit.teams.map((x, j) =>
+                    j === i ? { ...x, color: e.target.value } : x,
+                  ),
+                })
+              }
+            />
+          </div>
+        ))}
+        {edit.players.map((p, i) => (
+          <div className="roster-edit" key={p.id}>
+            <input
+              aria-label="Player name"
+              value={p.name}
+              onChange={(e) =>
+                setEdit({
+                  ...edit,
+                  players: edit.players.map((x, j) =>
+                    i === j ? { ...x, name: e.target.value } : x,
+                  ),
+                })
+              }
+            />
+            <label>
+              Index
+              <input
+                type="number"
+                step="0.1"
+                value={p.index}
+                onChange={(e) =>
+                  setEdit({
+                    ...edit,
+                    players: edit.players.map((x, j) =>
+                      i === j ? { ...x, index: +e.target.value } : x,
+                    ),
+                  })
+                }
+              />
+            </label>
+            <select
+              aria-label="Team"
+              value={p.team}
+              onChange={(e) =>
+                setEdit({
+                  ...edit,
+                  players: edit.players.map((x, j) =>
+                    i === j ? { ...x, team: +e.target.value as 0 | 1 } : x,
+                  ),
+                })
+              }
+            >
+              {edit.teams.map((t, i) => (
+                <option key={i} value={i}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
+            <label>
+              <input
+                type="checkbox"
+                checked={p.captain}
+                onChange={(e) =>
+                  setEdit({
+                    ...edit,
+                    players: edit.players.map((x, j) =>
+                      i === j ? { ...x, captain: e.target.checked } : x,
+                    ),
+                  })
+                }
+              />
+              Captain
+            </label>
+            <input
+              placeholder="Avatar URL"
+              value={p.avatar}
+              onChange={(e) =>
+                setEdit({
+                  ...edit,
+                  players: edit.players.map((x, j) =>
+                    i === j ? { ...x, avatar: e.target.value } : x,
+                  ),
+                })
+              }
+            />
+            <input
+              type="number"
+              placeholder="CH override this round"
+              value={p.overrides[round] ?? ""}
+              onChange={(e) =>
+                setEdit({
+                  ...edit,
+                  players: edit.players.map((x, j) => {
+                    if (i !== j) return x;
+                    const overrides = { ...x.overrides };
+                    if (e.target.value === "") delete overrides[round];
+                    else overrides[round] = +e.target.value;
+                    return { ...x, overrides };
+                  }),
+                })
+              }
+            />
+            <button
+              onClick={() => {
+                if (edit.matches.some((m) => [...m.a, ...m.b].includes(p.id))) {
+                  setError("Remove this player from pairings first");
+                  return;
+                }
+                setEdit({
+                  ...edit,
+                  players: edit.players.filter((x) => x.id !== p.id),
+                });
+              }}
+            >
+              Remove
+            </button>
+          </div>
+        ))}
+        <button
+          onClick={() =>
+            edit.players.length < 12 &&
+            setEdit({
+              ...edit,
+              players: [
+                ...edit.players,
+                {
+                  id: crypto.randomUUID(),
+                  name: "New golfer",
+                  index: 0,
+                  team:
+                    edit.players.filter((p) => p.team === 0).length < 6 ? 0 : 1,
+                  captain: false,
+                  avatar: "",
+                  overrides: {},
+                },
+              ],
+            })
+          }
+        >
+          + Add golfer
+        </button>
+        <button
+          className="primary"
+          onClick={() => onSave(edit, "Roster and team settings updated")}
+        >
+          Save roster
+        </button>
+      </section>
+      <section className="panel">
+        <h2>Rounds, verified scorecards & tee times</h2>
+        <select value={round} onChange={(e) => setRound(e.target.value)}>
+          {edit.rounds.map((x) => (
+            <option key={x.id} value={x.id}>
+              {x.name}
+            </option>
+          ))}
+        </select>
+        <div className="form-row">
+          <label>
+            Course
+            <input
+              value={r.name}
+              onChange={(e) => modify({ name: e.target.value })}
+            />
+          </label>
+          <label>
+            Local date
+            <input
+              type="date"
+              value={r.date}
+              onChange={(e) => modify({ date: e.target.value })}
+            />
+          </label>
+          <label>
+            Format
+            <select
+              value={r.format}
+              onChange={(e) =>
+                modify({ format: e.target.value as typeof r.format })
+              }
+            >
+              {Object.entries(formats).map(([k, v]) => (
+                <option key={k} value={k}>
+                  {v}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+        <div className="form-row">
+          {r.times.map((t, i) => (
+            <label key={i}>
+              Foursome {i + 1}
+              <input
+                type="time"
+                value={t}
+                onChange={(e) =>
+                  modify({
+                    times: r.times.map((x, j) =>
+                      i === j ? e.target.value : x,
+                    ),
+                  })
+                }
+              />
+            </label>
+          ))}
+        </div>
+        <div className="form-row">
+          <label>
+            Tee box
+            <input
+              value={r.tee}
+              onChange={(e) => modify({ tee: e.target.value })}
+            />
+          </label>
+          <label>
+            Course rating
+            <input
+              type="number"
+              step=".1"
+              value={r.rating}
+              onChange={(e) => modify({ rating: +e.target.value })}
+            />
+          </label>
+          <label>
+            Slope
+            <input
+              type="number"
+              value={r.slope}
+              onChange={(e) => modify({ slope: +e.target.value })}
+            />
+          </label>
+          <label>
+            First nominating captain
+            <select
+              value={r.nomination ?? 0}
+              onChange={(e) => modify({ nomination: +e.target.value as 0 | 1 })}
+            >
+              {edit.teams.map((t, i) => (
+                <option key={i} value={i}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Shamble scoring
+            <select
+              value={r.shamble}
+              onChange={(e) =>
+                modify({ shamble: e.target.value as "best" | "combined" })
+              }
+            >
+              <option value="best">Lowest net ball</option>
+              <option value="combined">Combined net</option>
+            </select>
+          </label>
+        </div>
+        <p>
+          Import verified holes as JSON: [{'{"par":4,"rank":1,"yards":400}'},
+          …18 holes]. No official course data is preloaded.
+        </p>
+        <textarea
+          value={json}
+          onChange={(e) => setJson(e.target.value)}
+          placeholder="Paste verified 18-hole JSON"
+        />
+        <button
+          onClick={() => {
+            try {
+              const h = JSON.parse(json);
+              if (
+                !Array.isArray(h) ||
+                h.length !== 18 ||
+                new Set(h.map((x) => x.rank)).size !== 18 ||
+                h.some(
+                  (x) =>
+                    !Number.isInteger(x.par) ||
+                    x.par < 3 ||
+                    x.par > 6 ||
+                    !Number.isInteger(x.rank) ||
+                    x.rank < 1 ||
+                    x.rank > 18 ||
+                    !Number.isFinite(x.yards) ||
+                    x.yards <= 0,
+                )
+              )
+                throw Error(
+                  "Require 18 valid holes, unique stroke indices 1–18, and positive yardages",
+                );
+              modify({ holes: h });
+              setError("Imported; verify and save below");
+            } catch (e) {
+              setError((e as Error).message);
+            }
+          }}
+        >
+          Import scorecard
+        </button>
+        <label>
+          <input
+            type="checkbox"
+            checked={r.verified}
+            onChange={(e) => modify({ verified: e.target.checked })}
+          />
+          I verified this scorecard against the course’s official tee data
+        </label>
+        <button
+          className="primary"
+          onClick={() => {
+            if (
+              r.verified &&
+              (r.holes.length !== 18 ||
+                r.slope < 55 ||
+                r.slope > 155 ||
+                r.rating <= 0)
+            ) {
+              setError(
+                "Verified course requires valid holes, rating, and slope 55–155",
+              );
+              return;
+            }
+            onSave(edit, "Round configuration updated");
+          }}
+        >
+          Save round settings
+        </button>
+        {error && <p role="alert">{error}</p>}
+      </section>
+      <section className="panel">
+        <h2>Match administration</h2>
+        <p>
+          Point overrides are explicit adjudications: A wins = 1, B wins = 0,
+          halve = 0.5.
+        </p>
+        {edit.matches
+          .filter((m) => m.round === round)
+          .map((m) => (
+            <div className="form-row" key={m.id}>
+              <b>{m.id}</b>
+              <label>
+                Foursome
+                <select
+                  value={m.slot}
+                  onChange={(e) =>
+                    setEdit({
+                      ...edit,
+                      matches: edit.matches.map((x) =>
+                        x.id === m.id ? { ...x, slot: +e.target.value } : x,
+                      ),
+                    })
+                  }
+                >
+                  {[0, 1, 2].map((i) => (
+                    <option key={i} value={i}>
+                      {i + 1}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Official result
+                <select
+                  value={m.manual ?? ""}
+                  onChange={(e) =>
+                    setEdit({
+                      ...edit,
+                      matches: edit.matches.map((x) =>
+                        x.id === m.id
+                          ? {
+                              ...x,
+                              manual:
+                                e.target.value === ""
+                                  ? undefined
+                                  : (+e.target.value as 0 | 0.5 | 1),
+                              reopened: false,
+                            }
+                          : x,
+                      ),
+                    })
+                  }
+                >
+                  <option value="">Automatic</option>
+                  <option value="1">Team A wins</option>
+                  <option value="0">Team B wins</option>
+                  <option value="0.5">Halved</option>
+                </select>
+              </label>
+              <button
+                onClick={() =>
+                  onSave(
+                    {
+                      ...edit,
+                      matches: edit.matches.map((x) =>
+                        x.id === m.id
+                          ? { ...x, reopened: !x.reopened, manual: undefined }
+                          : x,
+                      ),
+                    },
+                    "Match reopened/finalized",
+                  )
+                }
+              >
+                {m.reopened ? "Resume automatic result" : "Reopen match"}
+              </button>
+              <button
+                onClick={() =>
+                  setEdit({
+                    ...edit,
+                    matches: edit.matches.filter((x) => x.id !== m.id),
+                  })
+                }
+              >
+                Remove pairing
+              </button>
+            </div>
+          ))}
+        <button
+          className="primary"
+          onClick={() =>
+            onSave(edit, "Match results and tee assignments updated")
+          }
+        >
+          Save match administration
+        </button>
+      </section>
+      <section className="panel">
+        <h2>Scoring & administration history</h2>
+        {s.audit.map((x, i) => (
+          <div className="audit" key={i}>
+            <time>
+              {new Date(x.at).toLocaleString("en-US", {
+                timeZone: "America/New_York",
+              })}
+            </time>
+            <span>{x.message}</span>
+          </div>
+        ))}
+        {mode === "demo" && (
+          <button onClick={() => onSave(demo(), "Demo reset")}>
+            Reset demonstration
+          </button>
+        )}
+      </section>
+    </div>
+  );
+}

@@ -40,13 +40,13 @@ export function demo(): State {
     id: `r${i}`,
     name,
     format: (
-      ["bestball", "stableford", "shamble", "shamble", "singles"] as const
+      ["bestball", "stableford", "shamble", "scramble", "singles"] as const
     )[i],
     times: times[i],
     date: "",
     rating: 72,
     slope: 113,
-    tee: "Illustrative demo tees",
+    tee: i === 2 || i === 3 ? "Blue (demo only)" : "White (demo only)",
     verified: false,
     holes: Array.from({ length: 18 }, (_, j) => ({
       par: [4, 4, 3, 5, 4, 4, 3, 5, 4][j % 9],

@@ -116,3 +116,30 @@ export function moneyLeaderboard(s: State): GolferMoney[] {
     return {player:p.id,...e,total,paid,balance:total-paid};
   }).sort((a,b)=>b.total-a.total);
 }
+
+export type LiveSkinHole = {
+  hole: number; status: "waiting" | "provisional" | "tied" | "won";
+  leaders: string[]; net: number | null; entered: number; expected: number;
+};
+/** Provisional leaders across the full field; never treats incomplete holes as paid skins. */
+export function liveSkins(s: State, r: Round): LiveSkinHole[] {
+  const mode = r.format === "shamble" || r.format === "scramble" ? "team" : "individual";
+  const matches = matchEntries(s, r);
+  const expected = mode === "team" ? 6 : 12;
+  return Array.from({length:18},(_,i)=>{
+    const contenders = matches.flatMap(m => (mode === "team"
+      ? [m.a,m.b]
+      : [...m.a,...m.b].map(id=>[id]))
+      .map(ids=>({ids,net: r.holes.length===18 ? score(s,m,ids,i,r) : null})));
+    const submitted = contenders.filter((x):x is {ids:string[];net:number}=>x.net!==null);
+    if (!submitted.length) return {hole:i+1,status:"waiting" as const,leaders:[],net:null,entered:0,expected};
+    const best=Math.min(...submitted.map(x=>x.net));
+    const winners=submitted.filter(x=>x.net===best);
+    const finished=r.verified && matches.length===(r.format==="singles"?6:3) && submitted.length===expected;
+    return {
+      hole:i+1,
+      status: finished ? (winners.length===1?"won" as const:"tied" as const) : "provisional" as const,
+      leaders:winners.flatMap(x=>x.ids),net:best,entered:submitted.length,expected,
+    };
+  });
+}

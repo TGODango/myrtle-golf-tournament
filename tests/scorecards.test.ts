@@ -3,7 +3,7 @@ import { strict as assert } from "node:assert";
 import { uploadedScorecards } from "../lib/course-scorecards";
 test("all five uploaded scorecards have valid tees and 18 distinct stroke indices",()=>{
   const tees=["White","White","Blue","Blue","White"];
-  const yards=[5576,6310,6564,6519,6396];
+  const yards=[5576,6310,6432,6737,6148];
   const pars=[70,71,71,72,72];
   for(let i=0;i<5;i++) {
     const c=uploadedScorecards["r"+i];

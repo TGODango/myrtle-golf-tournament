@@ -1874,7 +1874,7 @@ function MoneyCenter({state,admin,onSave}:{
           <div className="table-scroll"><table><thead><tr><th>Hole</th><th>Current leader / winner</th><th>Net</th><th>Scores in</th><th>Status</th></tr></thead><tbody>
           {holes.map(h=><tr key={h.hole}>
             <td>{h.hole}</td>
-            <td>{h.status==="won" ? h.leaders.map(id=>state.players.find(p=>p.id===id)?.name??id).join(" / ")+" — SKIN WINNER" : h.status==="tied" ? "NO SKIN — TIED" : "WAITING FOR SCORES"}</td>
+            <td>{h.status==="won" ? <strong style={{color:"#16803c",fontWeight:800}}>{h.leaders.map(id=>state.players.find(p=>p.id===id)?.name??id).join(" / ")} — SKIN WINNER</strong> : h.status==="tied" ? <strong>NO SKIN — TIED</strong> : <span style={{opacity:0.65}}>WAITING FOR SCORES</span>}</td>
             <td>{h.status==="won"||h.status==="tied"?h.net:"—"}</td>
             <td>{h.entered} / {h.expected}</td>
             <td>{h.status==="won"?"WINNER":h.status==="tied"?"NO SKIN":"WAITING"}</td>

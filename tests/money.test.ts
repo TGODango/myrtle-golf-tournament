@@ -15,6 +15,7 @@ test("standard Stableford awards zero through five points", () => {
 
 test("individual skins require all twelve complete cards and exclude tied holes", () => {
   const s=demo(),r=s.rounds[0];r.verified=true;
+  s.players.forEach(p=>{p.index=0;p.overrides[r.id]=0;});
   for(const m of s.matches.filter(m=>m.round===r.id))
     for(const id of [...m.a,...m.b])
       for(let h=0;h<18;h++)

@@ -47,7 +47,7 @@ const formats = {
 export default function App() {
   const [s, setS] = useState<State>(blank()),
     [page, setPage] = useState("Home"),
-    [mode] = useState<"demo" | "cloud">("cloud"),
+    [mode, setMode] = useState<"demo" | "cloud">("cloud"),
     [round, setRound] = useState("r0"),
     [player, setPlayer] = useState("p0"),
     [hole, setHole] = useState(0),
@@ -73,16 +73,58 @@ export default function App() {
         request: string;
       }[]
     >([]);
+  function enterTestMode() {
+    if (!user) { setNotice("Sign in before opening Test Mode"); return; }
+    const saved = localStorage.getItem("dango-test-v1");
+    let testState: State;
+    try { testState = saved ? JSON.parse(saved) : demo(); }
+    catch { testState = demo(); }
+    // Test Mode always uses fictional golfers and local-only scores.
+    if (testState.players.length !== 12 || testState.players.some(p => !p.name)) testState = demo();
+    setS(testState);
+    setPlayer("p0");
+    setRound("r0");
+    setHole(0);
+    setPage("Home");
+    setMode("demo");
+    setNotice("TEST MODE: Fictional golfers and scores stay on this device. Live tournament is unchanged.");
+  }
+  async function exitTestMode() {
+    setMode("cloud");
+    setPage("Home");
+    setRound("r0");
+    setHole(0);
+    setNotice("Returning to live tournament…");
+    if (!cloud) return;
+    const { data, error } = await cloud.rpc("read_tournament");
+    if (error) { setNotice("Live tournament could not load: " + error.message); return; }
+    if (data) { setS(data.state); setRev(data.revision); }
+    const { data: session } = await cloud.auth.getUser();
+    if (session.user) {
+      const { data: member } = await cloud.from("members").select("player_id,role").eq("user_id", session.user.id).single();
+      if (member) { setPlayer(member.player_id); setRole(member.role); }
+    }
+    setNotice("LIVE TOURNAMENT: Your real tournament data is loaded.");
+  }
+  function resetTestMode() {
+    if (!window.confirm("Reset all TEST scores and fictional pairings? Your LIVE tournament will not be affected.")) return;
+    localStorage.removeItem("dango-test-v1");
+    setS(demo());
+    setPlayer("p0");
+    setRound("r0");
+    setHole(0);
+    setNotice("Test tournament reset. Live data remains unchanged.");
+  }
   const admin = mode === "demo" || role === "admin";
   const captain = admin || role === "captain";
   useEffect(() => {
-    const saved = localStorage.getItem("myrtle-demo-v1");
+    const saved = localStorage.getItem("dango-test-v1");
     if (saved)
       try {
         setS(JSON.parse(saved));
       } catch {}
     const receive = (e: StorageEvent) => {
-      if (e.key === "myrtle-demo-v1" && e.newValue)
+      if (e.key === "dango-test-v1" && e.newValue)
         setS(JSON.parse(e.newValue));
     };
     window.addEventListener("storage", receive);
@@ -97,7 +139,7 @@ export default function App() {
   }, []);
   useEffect(() => {
     if (mode === "demo")
-      localStorage.setItem("myrtle-demo-v1", JSON.stringify(s));
+      localStorage.setItem("dango-test-v1", JSON.stringify(s));
   }, [s, mode]);
   useEffect(() => {
     const saved = localStorage.getItem("myrtle-score-queue");
@@ -309,7 +351,7 @@ export default function App() {
       expected = s.scores[k]?.version ?? 0;
     if (mode === "demo") {
       const latest = JSON.parse(
-        localStorage.getItem("myrtle-demo-v1") ?? JSON.stringify(s),
+        localStorage.getItem("dango-test-v1") ?? JSON.stringify(s),
       );
       if ((latest.scores[k]?.version ?? 0) !== expected) {
         setS(latest);
@@ -407,7 +449,13 @@ export default function App() {
           <span>
             MYRTLE BEACH <span className="muted">/ {page}</span>
           </span>
-          <div>
+          <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+            {user && (mode === "cloud"
+              ? <button type="button" onClick={enterTestMode} style={{padding:"7px 12px",border:"1px solid #d5b56a",borderRadius:8,fontWeight:700}}>🧪 Enter Test Mode</button>
+              : <>
+                  <button type="button" onClick={resetTestMode} style={{padding:"7px 12px",border:"1px solid #d5b56a",borderRadius:8}}>Reset Test</button>
+                  <button type="button" onClick={exitTestMode} style={{padding:"7px 12px",border:"1px solid #d5b56a",borderRadius:8,fontWeight:700}}>Return to LIVE</button>
+                </>)}
             <span className="connection">
               <i />
               {mode === "demo" ? "DEMO MODE" : online ? "CONNECTED" : "OFFLINE"}
@@ -416,6 +464,7 @@ export default function App() {
           </div>
         </header>
         <div className="content">
+          {mode === "demo" && <div role="status" style={{padding:12,marginBottom:16,border:"2px solid #d5b56a",borderRadius:8,fontWeight:700}}>🧪 TEST MODE — Fictional golfers. Scores and changes are saved only on this device. NOT THE LIVE TOURNAMENT.</div>}
           {notice && (
             <div className="notice" role="status">
               {notice}

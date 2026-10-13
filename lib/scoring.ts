@@ -103,6 +103,7 @@ export function result(s: State, m: Match) {
   );
   const low = Math.min(...Object.values(h));
   const scrambleHandicap = (ids: string[]) => { const ch = ids.map(id => h[id]).sort((a,b)=>a-b); return Math.round(0.35 * ch[0] + 0.15 * ch[1]); };
+  const lowScramble = r.format === "scramble" ? Math.min(scrambleHandicap(m.a), scrambleHandicap(m.b)) : 0;
   let lead = 0,
     played = 0,
     totals = [0, 0],
@@ -112,8 +113,8 @@ export function result(s: State, m: Match) {
   for (let n = 0; n < 18; n++) {
     if (r.format === "scramble" ? ![m.a[0],m.b[0]].every(id => s.scores[key(m.id,id,n)]) : !ids.every(id => s.scores[key(m.id,id,n)])) break;
     if (r.format === "scramble") {
-      const a = s.scores[key(m.id,m.a[0],n)].gross - strokes(scrambleHandicap(m.a),r.holes[n].rank);
-      const b = s.scores[key(m.id,m.b[0],n)].gross - strokes(scrambleHandicap(m.b),r.holes[n].rank);
+      const a = s.scores[key(m.id,m.a[0],n)].gross - strokes(scrambleHandicap(m.a)-lowScramble,r.holes[n].rank);
+      const b = s.scores[key(m.id,m.b[0],n)].gross - strokes(scrambleHandicap(m.b)-lowScramble,r.holes[n].rank);
       totals[0]+=a;totals[1]+=b;played++;lead+=Math.sign(b-a);
       if (Math.abs(lead)>18-played) {decided=true;final=played===18?`${Math.abs(lead)} UP final`:`${Math.abs(lead)} & ${18-played}`;break;}
       continue;

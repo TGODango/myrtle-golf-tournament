@@ -1866,7 +1866,7 @@ function MoneyCenter({state,admin,onSave}:{
     </section>
     <section className="panel">
       <h2>Live skins by hole</h2>
-      <p>Updates as scores arrive. PROVISIONAL means not all golfers or pairs have submitted that hole. A skin is only confirmed after all scores for that hole are entered; payouts are calculated when the full round is complete.</p>
+      <p>Results stay hidden until all 12 golfers (or all six teams for Shamble and Scramble) have entered that hole. Then the board reveals SKIN WINNER or NO SKIN — TIED. Dollar payouts are calculated after the full verified round is complete.</p>
       {state.rounds.map(r=>{
         const holes=liveSkins(state,r);
         return <div key={r.id} style={{marginBottom:24}}>
@@ -1874,10 +1874,10 @@ function MoneyCenter({state,admin,onSave}:{
           <div className="table-scroll"><table><thead><tr><th>Hole</th><th>Current leader / winner</th><th>Net</th><th>Scores in</th><th>Status</th></tr></thead><tbody>
           {holes.map(h=><tr key={h.hole}>
             <td>{h.hole}</td>
-            <td>{h.leaders.length ? h.leaders.map(id=>state.players.find(p=>p.id===id)?.name??id).join(" / ") : "—"}</td>
-            <td>{h.net??"—"}</td>
+            <td>{h.status==="won" ? h.leaders.map(id=>state.players.find(p=>p.id===id)?.name??id).join(" / ")+" — SKIN WINNER" : h.status==="tied" ? "NO SKIN — TIED" : "WAITING FOR SCORES"}</td>
+            <td>{h.status==="won"||h.status==="tied"?h.net:"—"}</td>
             <td>{h.entered} / {h.expected}</td>
-            <td>{h.status==="won"?"SKIN WON":h.status==="tied"?"TIED — NO SKIN":h.status==="provisional"?"PROVISIONAL":"WAITING"}</td>
+            <td>{h.status==="won"?"WINNER":h.status==="tied"?"NO SKIN":"WAITING"}</td>
           </tr>)}
           </tbody></table></div>
         </div>;

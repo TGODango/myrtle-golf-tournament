@@ -135,7 +135,7 @@ export function liveSkins(s: State, r: Round): LiveSkinHole[] {
     if (!submitted.length) return {hole:i+1,status:"waiting" as const,leaders:[],net:null,entered:0,expected};
     const best=Math.min(...submitted.map(x=>x.net));
     const winners=submitted.filter(x=>x.net===best);
-    const finished=r.verified && matches.length===(r.format==="singles"?6:3) && submitted.length===expected;
+    const finished=r.holes.length===18 && matches.length===(r.format==="singles"?6:3) && submitted.length===expected;
     return {
       hole:i+1,
       status: finished ? (winners.length===1?"won" as const:"tied" as const) : "provisional" as const,

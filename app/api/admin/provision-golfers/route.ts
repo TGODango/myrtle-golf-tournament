@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
   for (const item of entries) {
     if (!item || typeof item.phone !== "string" || typeof item.player_id !== "string") return reply("Invalid entry");
     item.phone = item.phone.replace(/\D/g, "");
-    if (!/^\d{10}$/.test(item.phone) || !/^p\d+$/.test(item.player_id)) return reply("Invalid phone or player ID");
+    if (!/^\d{10}$/.test(item.phone) || !/^([a-f0-9-]{36}|p\d+)$/.test(item.player_id)) return reply("Invalid phone or player ID");
     if (phones.has(item.phone) || players.has(item.player_id)) return reply("Duplicate phone or player");
     phones.add(item.phone); players.add(item.player_id);
   }

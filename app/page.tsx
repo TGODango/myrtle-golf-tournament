@@ -22,6 +22,7 @@ import {
 } from "../lib/scoring";
 import { demo, blank } from "../lib/demo";
 import { cloud } from "../lib/cloud";
+import { uploadedScorecards } from "../lib/course-scorecards";
 import { moneyLeaderboard, prizeSettings, roundSkins } from "../lib/money";
 const nav = [
   "Home",
@@ -1558,6 +1559,17 @@ function Admin({
             </select>
           </label>
         </div>
+        <p>Uploaded official scorecard available for this course. Loads the correct selected tee, all 18 pars, stroke indexes, yardages, rating and slope. Review it before marking verified and saving.</p>
+        <button type="button" onClick={()=>{
+          const card=uploadedScorecards[round];
+          if (!card) {setError("No uploaded scorecard for this round");return;}
+          if (Object.keys(edit.scores).some(k=>edit.matches.some(m=>m.round===round&&k.startsWith(m.id+":")))) {
+            setError("Existing scores detected. Course configuration must be reviewed before replacing the scorecard.");
+            return;
+          }
+          modify({...card,verified:false});
+          setError("Scorecard loaded from supplied PDF. Review and tick verified, then Save round settings.");
+        }}>Load uploaded {uploadedScorecards[round]?.tee ?? ""} tee scorecard</button>
         <p>
           Import verified holes as JSON: [{'{"par":4,"rank":1,"yards":400}'},
           …18 holes]. No official course data is preloaded.

@@ -49,6 +49,9 @@ export default function App() {
     [gross, setGross] = useState(4),
     [notice, setNotice] = useState(""),
     [email, setEmail] = useState(""),
+    [phone, setPhone] = useState(""),
+    [passcode, setPasscode] = useState(""),
+    [signingIn, setSigningIn] = useState(false),
     [user, setUser] = useState(""),
     [role, setRole] = useState("golfer"),
     [rev, setRev] = useState(0),
@@ -416,31 +419,51 @@ export default function App() {
           {mode === "cloud" && !user ? (
             <section className="panel">
               <h1>Your championship starts here.</h1>
-              <p>Sign in using the email assigned to your player invitation.</p>
-              <input
-                type="email"
-                placeholder="Your email address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-              <button
-                className="primary"
-                onClick={async () => {
-                  const { error } = await cloud!.auth.signInWithOtp({
-                    email,
-                    options: {
-                      shouldCreateUser: false,
-                      emailRedirectTo: location.origin,
-                    },
+              <p>Enter your registered phone number and tournament code.</p>
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                if (!cloud || signingIn) return;
+                setSigningIn(true);
+                try {
+                  const response = await fetch("/api/phone-login", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ phone, code: passcode }),
                   });
-                  setNotice(
-                    error?.message ??
-                      "Check your email for a secure sign-in link",
-                  );
-                }}
-              >
-                Send sign-in link
-              </button>
+                  const data = await response.json();
+                  if (!response.ok) { setNotice(data.error || "Sign-in failed"); return; }
+                  const { error } = await cloud.auth.setSession({
+                    access_token: data.access_token,
+                    refresh_token: data.refresh_token,
+                  });
+                  setNotice(error?.message || "Welcome to DangoGolf!");
+                } catch {
+                  setNotice("Unable to sign in. Please try again.");
+                } finally {
+                  setSigningIn(false);
+                }
+              }}>
+                <input type="tel" autoComplete="tel" inputMode="tel"
+                  placeholder="Phone number" aria-label="Phone number"
+                  value={phone} onChange={(e) => setPhone(e.target.value)} required />
+                <input type="password" inputMode="numeric" maxLength={4}
+                  placeholder="4-digit tournament code" aria-label="Tournament code"
+                  value={passcode} onChange={(e) => setPasscode(e.target.value)} required />
+                <button type="submit" className="primary" disabled={signingIn}>
+                  {signingIn ? "Signing in…" : "Enter Tournament"}
+                </button>
+              </form>
+              <details style={{ marginTop: 24 }}>
+                <summary>Existing email sign-in (temporary backup)</summary>
+                <input type="email" placeholder="Your email address"
+                  value={email} onChange={(e) => setEmail(e.target.value)} />
+                <button onClick={async () => {
+                  const { error } = await cloud!.auth.signInWithOtp({
+                    email, options: { shouldCreateUser: false, emailRedirectTo: location.origin },
+                  });
+                  setNotice(error?.message ?? "Check your email for a sign-in link");
+                }}>Send sign-in link</button>
+              </details>
             </section>
           ) : (
             <>

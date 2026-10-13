@@ -23,7 +23,7 @@ import {
 import { demo, blank } from "../lib/demo";
 import { cloud } from "../lib/cloud";
 import { uploadedScorecards } from "../lib/course-scorecards";
-import { moneyLeaderboard, prizeSettings, roundSkins } from "../lib/money";
+import { liveSkins, moneyLeaderboard, prizeSettings, roundSkins } from "../lib/money";
 const nav = [
   "Home",
   "Live Leaderboard",
@@ -230,6 +230,10 @@ export default function App() {
     }
     await load();
     setNotice("Score saved to tournament");
+    if (page === "My Scorecard" && item.hole < 17) {
+      setHole(h => h === item.hole ? h + 1 : h);
+      setGross(s.rounds.find(r => r.id === round)?.holes[item.hole + 1]?.par ?? 4);
+    }
     return true;
   }
   useEffect(() => {
@@ -367,6 +371,7 @@ export default function App() {
         },
         `${names([player])}: hole ${hole + 1} → ${gross}`,
       );
+      if (hole < 17) { setHole(hole + 1); setGross(r.holes[hole + 1].par); }
     } else {
       setPending((q) => [
         ...q,
@@ -1860,6 +1865,23 @@ function MoneyCenter({state,admin,onSave}:{
       {admin && <button className="primary" onClick={save}>Save prize settings & payouts</button>}
     </section>
     <section className="panel">
+      <h2>Live skins by hole</h2>
+      <p>Updates as scores arrive. PROVISIONAL means not all golfers or pairs have submitted that hole. A skin is only confirmed after all scores for that hole are entered; payouts are calculated when the full round is complete.</p>
+      {state.rounds.map(r=>{
+        const holes=liveSkins(state,r);
+        return <div key={r.id} style={{marginBottom:24}}>
+          <h3>{r.name}</h3>
+          <div className="table-scroll"><table><thead><tr><th>Hole</th><th>Current leader / winner</th><th>Net</th><th>Scores in</th><th>Status</th></tr></thead><tbody>
+          {holes.map(h=><tr key={h.hole}>
+            <td>{h.hole}</td>
+            <td>{h.leaders.length ? h.leaders.map(id=>state.players.find(p=>p.id===id)?.name??id).join(" / ") : "—"}</td>
+            <td>{h.net??"—"}</td>
+            <td>{h.entered} / {h.expected}</td>
+            <td>{h.status==="won"?"SKIN WON":h.status==="tied"?"TIED — NO SKIN":h.status==="provisional"?"PROVISIONAL":"WAITING"}</td>
+          </tr>)}
+          </tbody></table></div>
+        </div>;
+      })}
       <h2>Daily net skins</h2>
       <p>100% course handicap · all 12 compete on individual days · team skins on Shamble and Scramble · no carryovers. All 18 holes and all scores must be complete before skins are awarded.</p>
       {state.rounds.map(r=>{

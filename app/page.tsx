@@ -1866,7 +1866,7 @@ function MoneyCenter({state,admin,onSave}:{
     </section>
     <section className="panel">
       <h2>Live skins by hole</h2>
-      <p>Updates as scores arrive. PROVISIONAL means not all golfers or pairs have submitted that hole. A skin is only confirmed after all scores for that hole are entered; payouts are calculated when the full round is complete.</p>
+      <p>Updates as scores arrive. PROVISIONAL means not all golfers or pairs have submitted that hole. A hole result is final once all competitors have submitted that hole. Tied low scores mean NO SKIN. Payouts are calculated only after the full verified round is complete.</p>
       {state.rounds.map(r=>{
         const holes=liveSkins(state,r);
         return <div key={r.id} style={{marginBottom:24}}>
@@ -1874,7 +1874,7 @@ function MoneyCenter({state,admin,onSave}:{
           <div className="table-scroll"><table><thead><tr><th>Hole</th><th>Current leader / winner</th><th>Net</th><th>Scores in</th><th>Status</th></tr></thead><tbody>
           {holes.map(h=><tr key={h.hole}>
             <td>{h.hole}</td>
-            <td>{h.leaders.length ? h.leaders.map(id=>state.players.find(p=>p.id===id)?.name??id).join(" / ") : "—"}</td>
+            <td>{h.status==="tied" ? "NO SKIN — tied low net" : h.status==="provisional" && h.leaders.length>1 ? "Tied so far: "+h.leaders.map(id=>state.players.find(p=>p.id===id)?.name??id).join(" / ") : h.leaders.length ? h.leaders.map(id=>state.players.find(p=>p.id===id)?.name??id).join(" / ") : "—"}</td>
             <td>{h.net??"—"}</td>
             <td>{h.entered} / {h.expected}</td>
             <td>{h.status==="won"?"SKIN WON":h.status==="tied"?"TIED — NO SKIN":h.status==="provisional"?"PROVISIONAL":"WAITING"}</td>

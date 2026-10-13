@@ -442,47 +442,47 @@ export const uploadedScorecards: Record<string,Pick<Round,"tee"|"rating"|"slope"
         "rank": 14
       },
       {
-        "yards": 317,
+        "yards": 339,
         "par": 4,
         "rank": 15
       },
       {
-        "yards": 489,
+        "yards": 464,
         "par": 5,
         "rank": 17
       },
       {
-        "yards": 424,
+        "yards": 392,
         "par": 4,
         "rank": 3
       },
       {
-        "yards": 175,
+        "yards": 174,
         "par": 3,
         "rank": 9
       },
       {
-        "yards": 416,
+        "yards": 366,
         "par": 4,
         "rank": 1
       },
       {
-        "yards": 509,
+        "yards": 501,
         "par": 5,
         "rank": 7
       },
       {
-        "yards": 180,
+        "yards": 177,
         "par": 3,
         "rank": 13
       },
       {
-        "yards": 348,
+        "yards": 339,
         "par": 4,
         "rank": 11
       },
       {
-        "yards": 428,
+        "yards": 386,
         "par": 4,
         "rank": 5
       }

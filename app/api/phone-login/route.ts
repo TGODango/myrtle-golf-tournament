@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const passcode = process.env.TOURNAMENT_PASSCODE;
-  if (!url || !serviceKey || !passcode || !/^\\d{4}$/.test(passcode))
+  if (!url || !serviceKey || !passcode || !/^\d{4}$/.test(passcode))
     return NextResponse.json({ error: "Phone login is not configured yet." }, { status: 503 });
 
   let body: unknown;
@@ -18,8 +18,8 @@ export async function POST(req: NextRequest) {
   if (!body || typeof body !== "object") return fail();
   const { phone: input, code } = body as { phone?: unknown; code?: unknown };
   if (typeof input !== "string" || typeof code !== "string") return fail();
-  const phone = input.replace(/\\D/g, "");
-  if (!/^\\d{10}$/.test(phone) || !/^\\d{4}$/.test(code)) return fail();
+  const phone = input.replace(/\D/g, "");
+  if (!/^\d{10}$/.test(phone) || !/^\d{4}$/.test(code)) return fail();
 
   const db = createClient(url, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false },

@@ -888,6 +888,7 @@ export default function App() {
                         {x.date || "Calendar date to be confirmed"} ·
                         America/New_York
                       </p>
+                      <CourseScorecard course={x} />
                       <div className="tee-times">
                         {x.times.map((t, j) => (
                           <div key={j}>
@@ -1559,6 +1560,7 @@ function Admin({
             </select>
           </label>
         </div>
+        <CourseScorecard course={r} />
         <p>Uploaded official scorecard available for this course. Loads the correct selected tee, all 18 pars, stroke indexes, yardages, rating and slope. Review it before marking verified and saving.</p>
         <button type="button" onClick={()=>{
           const card=uploadedScorecards[round];
@@ -1822,4 +1824,36 @@ function MoneyCenter({state,admin,onSave}:{
       {admin && <button className="primary" onClick={save}>Save paid amounts</button>}
     </section>
   </div>;
+}
+
+function CourseScorecard({ course }: { course: State["rounds"][number] }) {
+  if (course.holes.length !== 18) return <p>Full 18-hole scorecard not loaded yet.</p>;
+  const sum = (holes: typeof course.holes, field: "par" | "yards") =>
+    holes.reduce((total, h) => total + h[field], 0);
+  return (
+    <div className="course-scorecard" style={{ marginTop: 16 }}>
+      <p><strong>{course.tee || "Tee not selected"} tees</strong> · Rating {course.rating.toFixed(1)} / Slope {course.slope} · Par {sum(course.holes, "par")} · {sum(course.holes, "yards").toLocaleString()} yards</p>
+      {!course.verified && <p><strong>Pending verification:</strong> Confirm this course's scorecard before tournament play.</p>}
+      <div className="table-scroll" style={{ overflowX: "auto" }}>
+        <table style={{ minWidth: 680, width: "100%", borderCollapse: "collapse", textAlign: "center" }}>
+          <thead><tr><th scope="col">Hole</th>{course.holes.slice(0, 9).map((_, i) => <th key={i} scope="col">{i + 1}</th>)}<th scope="col">OUT</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Yards</th>{course.holes.slice(0, 9).map((h, i) => <td key={i}>{h.yards}</td>)}<td><strong>{sum(course.holes.slice(0, 9), "yards")}</strong></td></tr>
+            <tr><th scope="row">Par</th>{course.holes.slice(0, 9).map((h, i) => <td key={i}>{h.par}</td>)}<td><strong>{sum(course.holes.slice(0, 9), "par")}</strong></td></tr>
+            <tr><th scope="row">HCP</th>{course.holes.slice(0, 9).map((h, i) => <td key={i}>{h.rank}</td>)}<td>—</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div className="table-scroll" style={{ overflowX: "auto", marginTop: 12 }}>
+        <table style={{ minWidth: 680, width: "100%", borderCollapse: "collapse", textAlign: "center" }}>
+          <thead><tr><th scope="col">Hole</th>{course.holes.slice(9).map((_, i) => <th key={i} scope="col">{i + 10}</th>)}<th scope="col">IN</th><th scope="col">TOTAL</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Yards</th>{course.holes.slice(9).map((h, i) => <td key={i}>{h.yards}</td>)}<td><strong>{sum(course.holes.slice(9), "yards")}</strong></td><td><strong>{sum(course.holes, "yards")}</strong></td></tr>
+            <tr><th scope="row">Par</th>{course.holes.slice(9).map((h, i) => <td key={i}>{h.par}</td>)}<td><strong>{sum(course.holes.slice(9), "par")}</strong></td><td><strong>{sum(course.holes, "par")}</strong></td></tr>
+            <tr><th scope="row">HCP</th>{course.holes.slice(9).map((h, i) => <td key={i}>{h.rank}</td>)}<td>—</td><td>—</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
 }

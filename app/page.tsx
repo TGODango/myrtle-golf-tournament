@@ -40,9 +40,9 @@ const formats = {
   singles: "Singles Match Play",
 };
 export default function App() {
-  const [s, setS] = useState<State>(demo),
+  const [s, setS] = useState<State>(blank()),
     [page, setPage] = useState("Home"),
-    [mode, setMode] = useState<"demo" | "cloud">("demo"),
+    [mode] = useState<"demo" | "cloud">("cloud"),
     [round, setRound] = useState("r0"),
     [player, setPlayer] = useState("p0"),
     [hole, setHole] = useState(0),
@@ -403,36 +403,10 @@ export default function App() {
               <i />
               {mode === "demo" ? "DEMO MODE" : online ? "CONNECTED" : "OFFLINE"}
             </span>
-            <button
-              onClick={() => {
-                if (!cloud) {
-                  setNotice(
-                    "Configure Supabase environment variables to connect the live tournament",
-                  );
-                  return;
-                }
-                setMode(mode === "demo" ? "cloud" : "demo");
-                if (mode === "demo") setS(blank());
-                else
-                  setS(
-                    JSON.parse(
-                      localStorage.getItem("myrtle-demo-v1") ??
-                        JSON.stringify(demo()),
-                    ),
-                  );
-              }}
-            >
-              {mode === "demo" ? "Connect live" : "View demo"}
-            </button>
+
           </div>
         </header>
         <div className="content">
-          {mode === "demo" && (
-            <div className="demo-banner">
-              DEMONSTRATION · Sample players and illustrative course data.
-              Results are separate from your live tournament.
-            </div>
-          )}
           {notice && (
             <div className="notice" role="status">
               {notice}

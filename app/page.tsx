@@ -1568,11 +1568,11 @@ function Admin({
             return;
           }
           modify({...card,verified:false});
-          setError("Scorecard loaded from supplied PDF. Review and tick verified, then Save round settings.");
+          setError("Scorecard loaded from published course information. Review the data, then mark verified if confirmed and save.");
         }}>Load uploaded {uploadedScorecards[round]?.tee ?? ""} tee scorecard</button>
         <p>
           Import verified holes as JSON: [{'{"par":4,"rank":1,"yards":400}'},
-          …18 holes]. No official course data is preloaded.
+          …18 holes]. Or use the official scorecard loader above.
         </p>
         <textarea
           value={json}

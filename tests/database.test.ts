@@ -16,6 +16,7 @@ test("database score authorization, concurrent versions, idempotency and audit",
     "",
   );
   await db.exec(sql);
+  await db.exec(readFileSync("supabase/migrations/002_scramble_prizes.sql", "utf8"));
   const s = demo();
   s.scores = {};
   s.rounds.forEach((r) => (r.verified = true));

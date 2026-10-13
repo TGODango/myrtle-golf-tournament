@@ -22,12 +22,12 @@ test("stroke allocation handles 0, >18, >36 and plus handicaps", () => {
   assert.equal(strokes(-2, 18), -1);
   assert.equal(strokes(-2, 1), 0);
 });
-test("Stableford continues beyond albatross, clamps at zero", () => {
+test("Standard Stableford caps at five and clamps at zero", () => {
   assert.deepEqual(
     [8, 6, 5, 4, 3, 2, 1].map((g) => stableford(g, 4, 0)),
     [0, 0, 1, 2, 3, 4, 5],
   );
-  assert.equal(stableford(1, 5, 1), 7);
+  assert.equal(stableford(1, 5, 1), 5);
 });
 function fixture(
   format: "bestball" | "shamble" | "singles" | "stableford",

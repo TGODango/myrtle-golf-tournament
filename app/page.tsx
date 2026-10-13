@@ -22,6 +22,8 @@ import {
 } from "../lib/scoring";
 import { demo, blank } from "../lib/demo";
 import { cloud } from "../lib/cloud";
+import { uploadedScorecards } from "../lib/course-scorecards";
+import { moneyLeaderboard, prizeSettings, roundSkins } from "../lib/money";
 const nav = [
   "Home",
   "Live Leaderboard",
@@ -31,12 +33,14 @@ const nav = [
   "Teams",
   "Matchup Draft",
   "Tournament Results",
+  "Money & Skins",
   "Admin Dashboard",
 ];
 const formats = {
   bestball: "Best Ball Match Play",
   stableford: "Combined Stableford",
   shamble: "Shamble Match Play",
+  scramble: "2-Man Scramble Match Play",
   singles: "Singles Match Play",
 };
 export default function App() {
@@ -299,7 +303,8 @@ export default function App() {
       );
       return;
     }
-    const k = key(mine.id, player, hole),
+    const scoringPlayer = r.format === "scramble" ? (mine.a.includes(player) ? mine.a[0] : mine.b[0]) : player;
+    const k = key(mine.id, scoringPlayer, hole),
       expected = s.scores[k]?.version ?? 0;
     if (mode === "demo") {
       const latest = JSON.parse(
@@ -324,7 +329,7 @@ export default function App() {
         ...q,
         {
           match: mine.id,
-          player,
+          player: scoringPlayer,
           hole,
           gross,
           expected,
@@ -381,7 +386,7 @@ export default function App() {
                   setMobile(false);
                 }}
               >
-                <span>{["◈", "▥", "▤", "⚑", "▦", "♧", "⇄", "♜", "⚙"][i]}</span>
+                <span>{["◈", "▥", "▤", "⚑", "▦", "♧", "⇄", "♜", "$", "⚙"][i]}</span>
                 {n}
               </button>
             ))}
@@ -729,7 +734,7 @@ export default function App() {
                               onClick={() => {
                                 setHole(i);
                                 setGross(
-                                  s.scores[key(mine.id, player, i)]?.gross ??
+                                  s.scores[key(mine.id, r.format === "scramble" ? (mine.a.includes(player) ? mine.a[0] : mine.b[0]) : player, i)]?.gross ??
                                     r.holes[i].par,
                                 );
                               }}
@@ -747,7 +752,7 @@ export default function App() {
                             {r.holes[hole].rank} · {r.holes[hole].yards} YDS
                           </div>
                           <p>
-                            Course handicap{" "}
+                            {r.format === "scramble" ? "Team scramble: 35% low + 15% high handicap. One gross score per pair." : "Course handicap"}{" "}
                             {handicap(
                               s.players.find((p) => p.id === player)!,
                               r,
@@ -791,7 +796,7 @@ export default function App() {
                           </div>
                           <p>
                             Currently saved:{" "}
-                            {s.scores[key(mine.id, player, hole)]?.gross ?? "—"}
+                            {s.scores[key(mine.id, r.format === "scramble" ? (mine.a.includes(player) ? mine.a[0] : mine.b[0]) : player, hole)]?.gross ?? "—"}
                           </p>
                           <button className="primary" onClick={saveScore}>
                             <Check size={18} /> Save hole {hole + 1}
@@ -840,7 +845,7 @@ export default function App() {
                               </tr>
                             </thead>
                             <tbody>
-                              {[...mine.a, ...mine.b].map((id) => (
+                              {(r.format === "scramble" ? [mine.a[0],mine.b[0]] : [...mine.a, ...mine.b]).map((id) => (
                                 <tr key={id}>
                                   <th>{names([id])}</th>
                                   {r.holes.map((_, i) => (
@@ -1095,6 +1100,7 @@ export default function App() {
                   </section>
                 </>
               )}
+              {page === "Money & Skins" && <MoneyCenter state={s} admin={admin} onSave={update} />}
               {page === "Admin Dashboard" &&
                 (admin ? (
                   <Admin
@@ -1553,9 +1559,20 @@ function Admin({
             </select>
           </label>
         </div>
+        <p>Uploaded official scorecard available for this course. Loads the correct selected tee, all 18 pars, stroke indexes, yardages, rating and slope. Review it before marking verified and saving.</p>
+        <button type="button" onClick={()=>{
+          const card=uploadedScorecards[round];
+          if (!card) {setError("No uploaded scorecard for this round");return;}
+          if (Object.keys(edit.scores).some(k=>edit.matches.some(m=>m.round===round&&k.startsWith(m.id+":")))) {
+            setError("Existing scores detected. Course configuration must be reviewed before replacing the scorecard.");
+            return;
+          }
+          modify({...card,verified:false});
+          setError("Scorecard loaded from published course information. Review the data, then mark verified if confirmed and save.");
+        }}>Load uploaded {uploadedScorecards[round]?.tee ?? ""} tee scorecard</button>
         <p>
           Import verified holes as JSON: [{'{"par":4,"rank":1,"yards":400}'},
-          …18 holes]. No official course data is preloaded.
+          …18 holes]. Or use the official scorecard loader above.
         </p>
         <textarea
           value={json}
@@ -1741,4 +1758,68 @@ function Admin({
       </section>
     </div>
   );
+}
+
+function MoneyCenter({state,admin,onSave}:{
+  state:State; admin:boolean; onSave:(next:State,message:string)=>void;
+}) {
+  const settings=prizeSettings(state);
+  const [draft,setDraft]=useState(settings);
+  useEffect(()=>setDraft(prizeSettings(state)),[state]);
+  const golfers=moneyLeaderboard(state);
+  const money=(n:number)=>new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"}).format(n);
+  const save=()=>onSave({...state,prizes:draft},"Prize settings and payouts updated");
+  return <div className="admin">
+    <section className="panel">
+      <h2>Money Center · Road to 9.5</h2>
+      <p>$2,400 planned pool · $600 championship · $600 match wins · $1,200 net skins. Only actual earned payouts are counted below.</p>
+      <div className="form-row">
+        <label>Championship bonus per winning golfer
+          <input type="number" min="0" step="1" value={draft.championshipPerWinner} disabled={!admin}
+            onChange={e=>setDraft({...draft,championshipPerWinner:+e.target.value})}/>
+        </label>
+        <label>Match win per golfer
+          <input type="number" min="0" step="1" value={draft.matchPerWinner} disabled={!admin}
+            onChange={e=>setDraft({...draft,matchPerWinner:+e.target.value})}/>
+        </label>
+      </div>
+      <p>Each 2-man match awards $20 per winning golfer; singles awards $20 per winner. Halved matches pay $10 to each golfer. No entry-fee or contribution tracking.</p>
+      {admin && <button className="primary" onClick={save}>Save prize settings & payouts</button>}
+    </section>
+    <section className="panel">
+      <h2>Daily net skins</h2>
+      <p>100% course handicap · all 12 compete on individual days · team skins on Shamble and Scramble · no carryovers. All 18 holes and all scores must be complete before skins are awarded.</p>
+      {state.rounds.map(r=>{
+        const sk=roundSkins(state,r);
+        return <div key={r.id} style={{marginBottom:24}}>
+          <h3>{r.name} · {r.tee || (r.id==="r2"||r.id==="r3"?"BLUE":"WHITE")} tees</h3>
+          <div className="form-row">
+            <label>Daily skins pot
+              <input type="number" min="0" step="1" disabled={!admin}
+                value={draft.dailySkins[r.id]??240}
+                onChange={e=>setDraft({...draft,dailySkins:{...draft.dailySkins,[r.id]:+e.target.value}})}/>
+            </label>
+          </div>
+          <p>{sk.mode==="team"?"2-man team net skins (split 50/50)":"Individual net skins among all 12"} · {sk.complete? `${sk.skins.length} winning skins · ${money(sk.skinValue)} per skin`:"Pending complete verified 18-hole scorecards"}</p>
+          {sk.complete && sk.skins.length===0 && <p>No skins won. {money(sk.pot)} remains unawarded for administrator decision.</p>}
+          {sk.complete && sk.skins.length>0 && <div className="table-scroll"><table><thead><tr><th>Hole</th><th>Winner</th><th>Net</th><th>Prize</th></tr></thead><tbody>
+            {sk.skins.map(skin=><tr key={skin.hole}><td>{skin.hole}</td><td>{skin.winners.map(id=>state.players.find(p=>p.id===id)?.name??id).join(" / ")}</td><td>{skin.net}</td><td>{money(skin.amount)}</td></tr>)}
+          </tbody></table></div>}
+        </div>;
+      })}
+    </section>
+    <section className="panel">
+      <h2>Golfer earnings & payment tracking</h2>
+      <p>Only winnings are tracked. Enter cumulative amounts paid out to each golfer; the remaining balance updates automatically.</p>
+      <div className="table-scroll"><table><thead><tr><th>Golfer</th><th>Matches</th><th>Skins</th><th>Championship</th><th>Total earned</th><th>Paid</th><th>Owed</th></tr></thead><tbody>
+        {golfers.map(g=><tr key={g.player}>
+          <td>{state.players.find(p=>p.id===g.player)?.name??g.player}</td>
+          <td>{money(g.matches)}</td><td>{money(g.skins)}</td><td>{money(g.championship)}</td><td><b>{money(g.total)}</b></td>
+          <td>{admin?<input aria-label={`Paid to ${g.player}`} type="number" min="0" step=".01" value={draft.paid[g.player]??0} onChange={e=>setDraft({...draft,paid:{...draft.paid,[g.player]:+e.target.value}})}/>:money(g.paid)}</td>
+          <td>{money(g.total-(draft.paid[g.player]??0))}</td>
+        </tr>)}
+      </tbody></table></div>
+      {admin && <button className="primary" onClick={save}>Save paid amounts</button>}
+    </section>
+  </div>;
 }

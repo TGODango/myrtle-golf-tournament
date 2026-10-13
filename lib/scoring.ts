@@ -1,4 +1,4 @@
-export type Format = "bestball" | "stableford" | "shamble" | "singles";
+export type Format = "bestball" | "stableford" | "shamble" | "scramble" | "singles";
 export type Hole = { par: number; rank: number; yards: number };
 export type Player = {
   id: string;
@@ -44,6 +44,7 @@ export type State = {
   scores: Record<string, Score>;
   teams: { name: string; color: string }[];
   audit: { at: string; message: string }[];
+  prizes?: { championshipPerWinner: number; matchPerWinner: number; dailySkins: Record<string, number>; paid: Record<string, number>; unawarded?: Record<string, number> };
 };
 export const key = (match: string, player: string, hole: number) =>
   `${match}:${player}:${hole}`;
@@ -59,7 +60,7 @@ export function strokes(handicap: number, rank: number) {
   );
 }
 export const stableford = (gross: number, par: number, allocated: number) =>
-  Math.max(0, 2 + par - (gross - allocated));
+  Math.min(5, Math.max(0, 2 + par - (gross - allocated)));
 export function handicap(p: Player, r: Round) {
   return (
     p.overrides[r.id] ??
@@ -101,6 +102,7 @@ export function result(s: State, m: Match) {
     ]),
   );
   const low = Math.min(...Object.values(h));
+  const scrambleHandicap = (ids: string[]) => { const ch = ids.map(id => h[id]).sort((a,b)=>a-b); return Math.round(0.35 * ch[0] + 0.15 * ch[1]); };
   let lead = 0,
     played = 0,
     totals = [0, 0],
@@ -108,7 +110,14 @@ export function result(s: State, m: Match) {
   let decided = false;
   let final = "";
   for (let n = 0; n < 18; n++) {
-    if (!ids.every((id) => s.scores[key(m.id, id, n)])) break;
+    if (r.format === "scramble" ? ![m.a[0],m.b[0]].every(id => s.scores[key(m.id,id,n)]) : !ids.every(id => s.scores[key(m.id,id,n)])) break;
+    if (r.format === "scramble") {
+      const a = s.scores[key(m.id,m.a[0],n)].gross - strokes(scrambleHandicap(m.a),r.holes[n].rank);
+      const b = s.scores[key(m.id,m.b[0],n)].gross - strokes(scrambleHandicap(m.b),r.holes[n].rank);
+      totals[0]+=a;totals[1]+=b;played++;lead+=Math.sign(b-a);
+      if (Math.abs(lead)>18-played) {decided=true;final=played===18?`${Math.abs(lead)} UP final`:`${Math.abs(lead)} & ${18-played}`;break;}
+      continue;
+    }
     const values = ids.map((id) => {
       const gross = s.scores[key(m.id, id, n)].gross;
       const pts = stableford(

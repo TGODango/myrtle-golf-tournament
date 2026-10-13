@@ -2,7 +2,7 @@
 // These scorecards are historical editions: confirm the tee boxes and current
 // course setup with the pro shop before live competition.
 import type { Round } from "./scoring";
-export const uploadedScorecards: Record<string,Pick<Round,"tee"|"rating"|"slope"|"holes">> = {
+export const uploadedScorecards: Record<string,Pick<Round,"tee"|"rating"|"slope"|"holes">> =  {
   "r0": {
     "tee": "White",
     "rating": 67.6,
@@ -199,247 +199,247 @@ export const uploadedScorecards: Record<string,Pick<Round,"tee"|"rating"|"slope"
   },
   "r2": {
     "tee": "Blue",
-    "rating": 71.2,
-    "slope": 127,
+    "rating": 71.3,
+    "slope": 137,
     "holes": [
       {
-        "yards": 442,
+        "yards": 426,
         "par": 4,
         "rank": 3
       },
       {
-        "yards": 347,
+        "yards": 335,
         "par": 4,
-        "rank": 15
+        "rank": 11
       },
       {
-        "yards": 195,
+        "yards": 197,
         "par": 3,
+        "rank": 7
+      },
+      {
+        "yards": 340,
+        "par": 4,
         "rank": 13
       },
       {
-        "yards": 341,
+        "yards": 521,
+        "par": 5,
+        "rank": 5
+      },
+      {
+        "yards": 391,
         "par": 4,
         "rank": 9
       },
       {
-        "yards": 539,
+        "yards": 470,
         "par": 5,
-        "rank": 7
+        "rank": 15
       },
       {
-        "yards": 419,
-        "par": 4,
-        "rank": 1
-      },
-      {
-        "yards": 471,
-        "par": 5,
-        "rank": 11
-      },
-      {
-        "yards": 140,
+        "yards": 137,
         "par": 3,
         "rank": 17
       },
       {
-        "yards": 402,
+        "yards": 375,
         "par": 4,
-        "rank": 5
+        "rank": 1
       },
       {
-        "yards": 436,
+        "yards": 412,
         "par": 4,
         "rank": 4
       },
       {
-        "yards": 407,
+        "yards": 384,
         "par": 4,
-        "rank": 10
+        "rank": 6
       },
       {
-        "yards": 145,
+        "yards": 159,
         "par": 3,
         "rank": 18
       },
       {
-        "yards": 529,
+        "yards": 532,
         "par": 5,
         "rank": 12
       },
       {
-        "yards": 371,
-        "par": 4,
-        "rank": 14
-      },
-      {
-        "yards": 328,
+        "yards": 379,
         "par": 4,
         "rank": 16
       },
       {
-        "yards": 449,
+        "yards": 331,
+        "par": 4,
+        "rank": 14
+      },
+      {
+        "yards": 443,
         "par": 4,
         "rank": 2
       },
       {
-        "yards": 195,
+        "yards": 194,
         "par": 3,
-        "rank": 8
+        "rank": 10
       },
       {
-        "yards": 408,
+        "yards": 406,
         "par": 4,
-        "rank": 6
+        "rank": 8
       }
     ]
   },
   "r3": {
     "tee": "Blue",
-    "rating": 71.3,
-    "slope": 130,
+    "rating": 73.6,
+    "slope": 143,
     "holes": [
       {
-        "yards": 366,
+        "yards": 365,
         "par": 4,
-        "rank": 11
+        "rank": 17
       },
       {
-        "yards": 512,
+        "yards": 517,
         "par": 5,
+        "rank": 5
+      },
+      {
+        "yards": 399,
+        "par": 4,
         "rank": 9
       },
       {
-        "yards": 373,
-        "par": 4,
-        "rank": 7
-      },
-      {
-        "yards": 451,
+        "yards": 467,
         "par": 4,
         "rank": 1
       },
       {
-        "yards": 161,
+        "yards": 175,
         "par": 3,
-        "rank": 17
-      },
-      {
-        "yards": 493,
-        "par": 5,
         "rank": 15
       },
       {
-        "yards": 215,
-        "par": 3,
-        "rank": 5
-      },
-      {
-        "yards": 367,
-        "par": 4,
+        "yards": 487,
+        "par": 5,
         "rank": 13
       },
       {
-        "yards": 441,
+        "yards": 245,
+        "par": 3,
+        "rank": 7
+      },
+      {
+        "yards": 363,
+        "par": 4,
+        "rank": 11
+      },
+      {
+        "yards": 467,
         "par": 4,
         "rank": 3
       },
       {
-        "yards": 357,
+        "yards": 393,
         "par": 4,
         "rank": 8
       },
       {
-        "yards": 461,
+        "yards": 463,
         "par": 5,
-        "rank": 16
+        "rank": 10
       },
       {
-        "yards": 449,
+        "yards": 456,
         "par": 4,
-        "rank": 2
+        "rank": 4
       },
       {
-        "yards": 144,
+        "yards": 152,
         "par": 3,
         "rank": 18
       },
       {
-        "yards": 346,
+        "yards": 341,
         "par": 4,
-        "rank": 10
+        "rank": 16
       },
       {
-        "yards": 551,
+        "yards": 593,
         "par": 5,
-        "rank": 6
+        "rank": 2
       },
       {
-        "yards": 261,
+        "yards": 244,
         "par": 4,
         "rank": 14
       },
       {
-        "yards": 160,
+        "yards": 178,
         "par": 3,
         "rank": 12
       },
       {
-        "yards": 411,
+        "yards": 432,
         "par": 4,
-        "rank": 4
+        "rank": 6
       }
     ]
   },
   "r4": {
     "tee": "White",
-    "rating": 71.3,
+    "rating": 70,
     "slope": 130,
     "holes": [
       {
-        "yards": 341,
+        "yards": 327,
         "par": 4,
-        "rank": 12
+        "rank": 18
       },
       {
-        "yards": 359,
-        "par": 4,
-        "rank": 2
-      },
-      {
-        "yards": 155,
-        "par": 3,
-        "rank": 16
-      },
-      {
-        "yards": 519,
-        "par": 5,
-        "rank": 10
-      },
-      {
-        "yards": 160,
-        "par": 3,
-        "rank": 14
-      },
-      {
-        "yards": 398,
+        "yards": 351,
         "par": 4,
         "rank": 4
       },
       {
-        "yards": 367,
+        "yards": 163,
+        "par": 3,
+        "rank": 16
+      },
+      {
+        "yards": 498,
+        "par": 5,
+        "rank": 8
+      },
+      {
+        "yards": 168,
+        "par": 3,
+        "rank": 12
+      },
+      {
+        "yards": 384,
+        "par": 4,
+        "rank": 2
+      },
+      {
+        "yards": 357,
         "par": 4,
         "rank": 6
       },
       {
-        "yards": 503,
+        "yards": 483,
         "par": 5,
-        "rank": 18
+        "rank": 10
       },
       {
-        "yards": 308,
+        "yards": 279,
         "par": 4,
-        "rank": 8
+        "rank": 14
       },
       {
         "yards": 317,

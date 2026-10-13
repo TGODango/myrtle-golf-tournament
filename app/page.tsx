@@ -30,6 +30,7 @@ const nav = [
   "My Scorecard",
   "Today's Matches",
   "Schedule",
+  "Course Scorecards",
   "Teams",
   "Matchup Draft",
   "Tournament Results",
@@ -874,6 +875,27 @@ export default function App() {
                     )}
                   </section>
                 </>
+              )}
+              {page === "Course Scorecards" && (
+                <div className="schedule">
+                  <section className="panel">
+                    <h2>Course Scorecards</h2>
+                    <p>All five Road to 9.5 courses. Select a course to view its full 18-hole scorecard.</p>
+                    <label>
+                      Choose course
+                      <select value={round} onChange={(e) => setRound(e.target.value)}>
+                        {s.rounds.map((x) => <option key={x.id} value={x.id}>{x.name} — {x.tee || "Tees pending"}</option>)}
+                      </select>
+                    </label>
+                  </section>
+                  {s.rounds.filter(x => x.id === round).map(x => (
+                    <section className="panel" key={x.id}>
+                      <h2>{x.name}</h2>
+                      <p>{formats[x.format]}</p>
+                      <CourseScorecard course={x} />
+                    </section>
+                  ))}
+                </div>
               )}
               {page === "Schedule" && (
                 <div className="schedule">

@@ -1362,3 +1362,9 @@ label select {
 @keyframes intro-sweep{to{transform:translate(140px,70px)}}
 @media(max-width:600px){.intro-stage{gap:13px}.intro-kicker{font-size:9px;letter-spacing:2px}.intro-teams{gap:11px;font-size:13px}.intro-logo img{max-height:30vh}.dango-intro h1{font-size:clamp(28px,8vw,45px)}.dango-intro p{letter-spacing:.8px}.intro-enter{padding:15px 13px;width:100%}}
 @media(prefers-reduced-motion:reduce){.dango-intro *,.dango-intro:before,.dango-intro:after{animation:none!important;transition:none!important}}
+
+/* Approved flag-and-chrome DangoGolf brand artwork */
+.shell:not(.tv) aside .dango-brand{display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 0 0}
+.shell:not(.tv) aside .dango-brand img{width:100%;max-width:218px;height:auto;object-fit:contain;display:block;filter:drop-shadow(0 3px 5px #0006)}
+.shell:not(.tv) aside .dango-brand small{font-size:9px;letter-spacing:1.3px;text-align:center;color:#c6dcf7}
+.intro-logo img{image-rendering:auto;filter:drop-shadow(0 5px 12px #0009)}

@@ -372,13 +372,29 @@ export default function App() {
           <div className="match-versus-mark">VS</div>
           <div className="match-team-side match-team-europe"><div className="match-team-label">🇪🇺 EUROPE</div><strong>{teamNames(m.b)}</strong></div>
         </div>
-        {matchRound?.format==="stableford"&&<p className="individual-points">{[...m.a,...m.b].map(id=>`${names([id])}: ${x.individual[id]??0} pts`).join(" · ")}</p>}
+        {matchRound?.format==="stableford"&&<p className="individual-points">{[...m.a,...m.b].map(id=>`${names([id])}: ${x.individual[id]??0} pts · ${stablefordNet(m,id)}`).join(" | ")}</p>}
         <div className="championship-match-footer">
           <strong>{x.status}</strong>
           <span>{x.complete?`${x.points[0]} – ${x.points[1]} POINTS`:matchRound?.times[m.slot]??"TEE TIME TBD"}</span>
         </div>
       </article>
     );
+  }
+  function stablefordNet(m: Match, id: string): string {
+    const roundInfo = s.rounds.find(item => item.id === m.round);
+    const golfer = s.players.find(item => item.id === id);
+    if (!roundInfo || !golfer || roundInfo.format !== "stableford" || roundInfo.holes.length !== 18) return "—";
+    let grossTotal = 0;
+    let strokeTotal = 0;
+    let holesScored = 0;
+    for (let i = 0; i < 18; i++) {
+      const entry = s.scores[key(m.id, id, i)];
+      if (!entry) continue;
+      grossTotal += entry.gross;
+      strokeTotal += strokes(handicap(golfer, roundInfo), roundInfo.holes[i].rank);
+      holesScored++;
+    }
+    return holesScored ? `${grossTotal - strokeTotal} net${holesScored < 18 ? ` / ${holesScored} holes` : ""}` : "—";
   }
   async function saveScore() {
     if (!mine) return;

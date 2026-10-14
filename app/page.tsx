@@ -74,21 +74,45 @@ export default function App() {
         request: string;
       }[]
     >([]);
+  function testWithLiveRoster(live: State, existing?: State): State {
+    const template = demo();
+    const sorted = [...live.players].sort((a,b)=>a.team-b.team);
+    if (sorted.length !== 12 || sorted.filter(p=>p.team===0).length !== 6 || sorted.filter(p=>p.team===1).length !== 6) return template;
+    const players = template.players.map((p,i)=>({
+      ...p, name:sorted[i].name, index:sorted[i].index,
+      team:sorted[i].team, captain:sorted[i].captain,
+      overrides:{...sorted[i].overrides},
+    }));
+    const old = existing && existing.players.length===12 ? existing : template;
+    return {
+      ...template,
+      players,
+      teams:[{name:"America",color:"#c62b47"},{name:"Europe",color:"#2b69d0"}],
+      rounds:template.rounds.map((r,i)=>({
+        ...r,
+        // Use the live course details where available; demo scores remain local only.
+        holes:live.rounds[i]?.holes.length===18?live.rounds[i].holes:r.holes,
+        rating:live.rounds[i]?.rating||r.rating,
+        slope:live.rounds[i]?.slope||r.slope,
+        tee:live.rounds[i]?.tee||r.tee,
+      })),
+      scores:old.scores,
+      audit:old.audit,
+    };
+  }
   function enterTestMode() {
     if (!user) { setNotice("Sign in before opening Test Mode"); return; }
-    const saved = localStorage.getItem("dango-test-v1");
-    let testState: State;
-    try { testState = saved ? JSON.parse(saved) : demo(); }
-    catch { testState = demo(); }
-    // Test Mode always uses fictional golfers and local-only scores.
-    if (testState.players.length !== 12 || testState.players.some(p => !p.name)) testState = demo();
+    let saved:State|undefined;
+    try { const raw=localStorage.getItem("dango-test-v1"); saved=raw?JSON.parse(raw):undefined; } catch {}
+    const testState=testWithLiveRoster(s,saved);
+    localStorage.setItem("dango-test-v1",JSON.stringify(testState));
     setS(testState);
     setPlayer("p0");
     setRound("r0");
     setHole(0);
     setPage("Live Scoring");
     setMode("demo");
-    setNotice("TEST MODE: Fictional golfers and scores stay on this device. Live tournament is unchanged.");
+    setNotice("TEST MODE: Real roster and teams, simulated local-only scores. LIVE tournament scores are untouched.");
   }
   async function exitTestMode() {
     setMode("cloud");
@@ -477,7 +501,7 @@ export default function App() {
           </div>
         </header>
         <div className="content">
-          {mode === "demo" && <div role="status" style={{padding:12,marginBottom:16,border:"2px solid #d5b56a",borderRadius:8,fontWeight:700}}>🧪 TEST MODE — Fictional golfers. Scores and changes are saved only on this device. NOT THE LIVE TOURNAMENT.</div>}
+          {mode === "demo" && <div role="status" style={{padding:12,marginBottom:16,border:"2px solid #d5b56a",borderRadius:8,fontWeight:700}}>🧪 TEST MODE — Real golfer names and teams, simulated scores saved ONLY on this device. NOT THE LIVE TOURNAMENT.</div>}
           {notice && (
             <div className="notice" role="status">
               {notice}

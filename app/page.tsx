@@ -1763,14 +1763,40 @@ function FoursomeScoreEntry({state,round,matches,player,hole,setHole,mode,onSave
     const scores=Array.from({length:end-start},(_,i)=>scored(e,start+i));
     return scores.every((n):n is number=>n!=null)?scores.reduce((a,b)=>a+b,0):null;
   };
+  const matchAllowance=(m:Match,id:string)=>{
+    const ids=[...m.a,...m.b];
+    const courseH=ids.map(pid=>({id:pid,h:handicap(state.players.find(p=>p.id===pid)!,round)}));
+    if(round.format==="scramble"){
+      const teamH=(team:string[])=>{const hs=team.map(pid=>courseH.find(p=>p.id===pid)!.h).sort((a,b)=>a-b);return Math.round(.35*hs[0]+.15*hs[1]);};
+      const a=teamH(m.a),b=teamH(m.b);
+      return (m.a.includes(id)?a:b)-Math.min(a,b);
+    }
+    const current=courseH.find(p=>p.id===id)?.h??0;
+    return round.format==="stableford"?current:current-Math.min(...courseH.map(p=>p.h));
+  };
+  const allowance=(e:typeof entries[number])=>{
+    const match=group.find(m=>m.id===e.match);
+    return match?matchAllowance(match,e.player):0;
+  };
+  const holeStrokes=(e:typeof entries[number],i:number)=>strokes(allowance(e),round.holes[i].rank);
+  const allowanceDescription=group.map(m=>{
+    if(round.format==="stableford")return [...m.a,...m.b].map(id=>{
+      const p=state.players.find(p=>p.id===id)!;
+      return p.name+": "+matchAllowance(m,id)+" strokes (full net Stableford)";
+    }).join(" · ");
+    const a=matchAllowance(m,m.a[0]),b=matchAllowance(m,m.b[0]);
+    const teamName=(ids:string[])=>ids.map(id=>state.players.find(p=>p.id===id)?.name??id).join(" / ");
+    return a===b?"Match plays even":a>b?teamName(m.a)+" receives "+a+" strokes from "+teamName(m.b):teamName(m.b)+" receives "+b+" strokes from "+teamName(m.a);
+  }).join(" | ");
   const totalPar=round.holes.reduce((v,h)=>v+h.par,0);
   const ninePar=round.holes.slice(nine*9,nine*9+9).reduce((v,h)=>v+h.par,0);
   return <div className="foursome-entry">
     <div className="foursome-heading"><div><div className="eyebrow">{round.name.toUpperCase()} · LIVE SCORING</div><h2>Hole {hole+1} <span className="scoring-par">· Par {round.holes[hole]?.par}</span></h2></div><span className="scoring-live-pill">● LIVE</span></div>
+    <p className="scoring-save-hint"><strong>Handicap:</strong> {allowanceDescription}. Strokes shown below are relative to the lowest handicap in each match (full handicap for Stableford).</p>
     <div className="scoring-nav"><button type="button" onClick={()=>jump(hole-1)} disabled={hole===0}>← Previous</button><span>{scoredCount} of 18 holes complete</span><button type="button" onClick={()=>jump(hole+1)} disabled={hole===17}>Next →</button></div>
     <div className="foursome-score-grid">
       {entries.map((e,i)=><div className={"foursome-player "+(teamFor(e)===0?"flag-usa":"flag-europe")} key={e.match+":"+e.player}>
-        <div className="flag-player-title"><span className="team-flag" aria-label={teamFor(e)===0?"USA":"Europe"}>{teamFor(e)===0?"🇺🇸":"🇪🇺"}</span><strong>{e.label}</strong></div>
+        <div className="flag-player-title"><span className="team-flag" aria-label={teamFor(e)===0?"USA":"Europe"}>{teamFor(e)===0?"🇺🇸":"🇪🇺"}</span><strong>{e.label}</strong></div><small className="scoring-save-hint">{holeStrokes(e,hole)>0?`● ${holeStrokes(e,hole)} stroke${holeStrokes(e,hole)>1?"s":""} on this hole`:"No stroke on this hole"} · {allowance(e)} for round</small>
         <div className="foursome-stepper">
           <button type="button" aria-label={"Decrease score for "+e.label} onClick={()=>change(e,-1)}><Minus size={20}/></button>
           <strong>{scoreFor(e)}</strong>
@@ -1784,7 +1810,7 @@ function FoursomeScoreEntry({state,round,matches,player,hole,setHole,mode,onSave
     {showCard&&<div className="scoring-card-detail">
       <div className="scoring-nine-switch"><button type="button" className={nine===0?"selected":""} onClick={()=>setNine(0)}>Front 9</button><button type="button" className={nine===1?"selected":""} onClick={()=>setNine(1)}>Back 9</button></div>
       <div className="table-scroll"><table className="scoring-scorecard"><thead><tr><th>Hole</th>{round.holes.slice(nine*9,nine*9+9).map((_,i)=><th key={i}><button type="button" className={hole===nine*9+i?"active-hole":""} onClick={()=>jump(nine*9+i)}>{nine*9+i+1}</button></th>)}<th>{nine===0?"OUT":"IN"}</th>{nine===1&&<th>TOTAL</th>}</tr><tr><th>Par</th>{round.holes.slice(nine*9,nine*9+9).map((h,i)=><th key={i}>{h.par}</th>)}<th>{ninePar}</th>{nine===1&&<th>{totalPar}</th>}</tr></thead><tbody>
-      {entries.map(e=><tr className={teamFor(e)===0?"scorecard-row-usa":"scorecard-row-europe"} key={e.match+e.player}><th><span className="scorecard-team-flag">{teamFor(e)===0?"🇺🇸":"🇪🇺"}</span><span className="scorecard-player-name">{e.label}</span></th>{round.holes.slice(nine*9,nine*9+9).map((_,i)=>{const n=scored(e,nine*9+i);const par=round.holes[nine*9+i].par;return <td key={i}><button type="button" className={n==null?"":n<par?"under-par":n>par?"over-par":"at-par"} onClick={()=>jump(nine*9+i)}>{n??"—"}</button></td>})}<td className="scoring-nine-total">{sumRange(e,nine*9,nine*9+9)??"—"}</td>{nine===1&&<td className="scoring-grand-total">{sumRange(e,0,18)??"—"}</td>}</tr>)}
+      {entries.map(e=><tr className={teamFor(e)===0?"scorecard-row-usa":"scorecard-row-europe"} key={e.match+e.player}><th><span className="scorecard-team-flag">{teamFor(e)===0?"🇺🇸":"🇪🇺"}</span><span className="scorecard-player-name">{e.label} ({allowance(e)} strokes)</span></th>{round.holes.slice(nine*9,nine*9+9).map((_,i)=>{const n=scored(e,nine*9+i);const par=round.holes[nine*9+i].par;return <td key={i}><button type="button" className={n==null?"":n<par?"under-par":n>par?"over-par":"at-par"} onClick={()=>jump(nine*9+i)}>{n??"—"}{holeStrokes(e,nine*9+i)>0?<sup title={`${holeStrokes(e,nine*9+i)} handicap stroke(s)`}>{"●".repeat(holeStrokes(e,nine*9+i))}</sup>:null}</button></td>})}<td className="scoring-nine-total">{sumRange(e,nine*9,nine*9+9)??"—"}</td>{nine===1&&<td className="scoring-grand-total">{sumRange(e,0,18)??"—"}</td>}</tr>)}
       </tbody></table></div>
       <p className="muted">Tap a hole to review or correct scores. Green = under par; outlined = over par.</p>
     </div>}

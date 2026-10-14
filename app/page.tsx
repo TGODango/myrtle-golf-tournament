@@ -25,17 +25,17 @@ import { cloud } from "../lib/cloud";
 import { uploadedScorecards } from "../lib/course-scorecards";
 import { liveSkins, moneyLeaderboard, prizeSettings, roundSkins } from "../lib/money";
 const nav = [
-  "Home",
+  "Live Scoring",
   "Live Leaderboard",
-  "My Scorecard",
+  "Live Skin Winners",
   "Today's Matches",
   "Schedule",
   "Course Scorecards",
   "Teams",
   "Matchup Draft",
   "Tournament Results",
-  "Live Skin Winners",
   "Money Center",
+  "Home",
   "Admin Dashboard",
 ];
 const formats = {
@@ -47,7 +47,7 @@ const formats = {
 };
 export default function App() {
   const [s, setS] = useState<State>(blank()),
-    [page, setPage] = useState("Home"),
+    [page, setPage] = useState("Live Scoring"),
     [mode, setMode] = useState<"demo" | "cloud">("cloud"),
     [round, setRound] = useState("r0"),
     [player, setPlayer] = useState("p0"),
@@ -86,13 +86,13 @@ export default function App() {
     setPlayer("p0");
     setRound("r0");
     setHole(0);
-    setPage("Home");
+    setPage("Live Scoring");
     setMode("demo");
     setNotice("TEST MODE: Fictional golfers and scores stay on this device. Live tournament is unchanged.");
   }
   async function exitTestMode() {
     setMode("cloud");
-    setPage("Home");
+    setPage("Live Scoring");
     setRound("r0");
     setHole(0);
     setNotice("Returning to live tournament…");
@@ -231,7 +231,7 @@ export default function App() {
     }
     await load();
     setNotice("Score saved to tournament");
-    if (page === "My Scorecard" && item.hole < 17) {
+    if (page === "Live Scoring" && item.hole < 17) {
       setHole(h => h === item.hole ? h + 1 : h);
       setGross(s.rounds.find(r => r.id === round)?.holes[item.hole + 1]?.par ?? 4);
     }
@@ -289,7 +289,7 @@ export default function App() {
   }).format(new Date());
   const roundDates = s.rounds.map((x) => x.date).join(",");
   useEffect(() => {
-    if (page === "Home") {
+    if (page === "Home" || page === "Live Scoring") {
       const today = s.rounds.filter((x) => x.date === localDate);
       if (today.length) {
         const upcoming = today.find((x) => x.times.some((t) => t >= localTime));
@@ -668,7 +668,7 @@ export default function App() {
                         </span>
                         <button
                           className="primary"
-                          onClick={() => setPage("My Scorecard")}
+                          onClick={() => setPage("Live Scoring")}
                         >
                           Enter scores <ArrowUpRight size={18} />
                         </button>
@@ -755,7 +755,7 @@ export default function App() {
                   {!matches.length && <p>Pairings have not been assigned.</p>}
                 </>
               )}
-              {page === "My Scorecard" && (
+              {page === "Live Scoring" && (
                 <>
                   {roundPicker()}
                   <section className="panel">

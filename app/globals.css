@@ -1181,3 +1181,27 @@ label select {
 .scoring-page .foursome-stepper button{width:39px;min-width:35px;height:44px}
 .scoring-page .foursome-save{min-height:57px;font-size:15px}
 }
+
+/* Flag artwork and player-first labeling */
+.shell:not(.tv) aside nav button .nav-icon-white{color:#f2f6ff}
+.shell:not(.tv) aside nav button .nav-icon-gold{color:#f6c44f}
+.shell:not(.tv) aside nav button.active .nav-icon-white{color:#fff}
+.shell:not(.tv) aside nav button.active .nav-icon-gold{color:#ffd568}
+.scoring-page .foursome-player.flag-usa{
+ background:linear-gradient(105deg,rgba(3,19,54,.83),rgba(6,28,72,.58)),url('/flag-usa.svg') center / cover no-repeat;
+ border:2px solid #db3650;
+}
+.scoring-page .foursome-player.flag-europe{
+ background:radial-gradient(circle at 72% 27%,#ffdc35 0 5px,transparent 6px),radial-gradient(circle at 81% 39%,#ffdc35 0 5px,transparent 6px),radial-gradient(circle at 71% 52%,#ffdc35 0 5px,transparent 6px),radial-gradient(circle at 57% 40%,#ffdc35 0 5px,transparent 6px),linear-gradient(110deg,#041a5c,#103fa0);
+ border:2px solid #2251ba;
+}
+.scoring-page .foursome-player .flag-player-title{
+ display:flex;flex-direction:row;align-items:center;justify-content:flex-start;gap:9px;min-height:38px;
+}
+.scoring-page .foursome-player .flag-player-title .team-flag{flex:none;font-size:29px;line-height:1}
+.scoring-page .foursome-player .flag-player-title strong{font-size:18px;line-height:1.15;text-shadow:0 2px 4px #06122d}
+@media(max-width:760px){
+.scoring-page .foursome-player .flag-player-title{gap:6px;min-height:33px}
+.scoring-page .foursome-player .flag-player-title .team-flag{font-size:22px}
+.scoring-page .foursome-player .flag-player-title strong{font-size:14px}
+}

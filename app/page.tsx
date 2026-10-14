@@ -65,6 +65,7 @@ export default function App() {
     [tv, setTv] = useState(false),
     [mobile, setMobile] = useState(false),
     [showIntro, setShowIntro] = useState(false),
+    [expandedLeaderboardMatch, setExpandedLeaderboardMatch] = useState<string | null>(null),
     [pending, setPending] = useState<
       {
         match: string;
@@ -359,24 +360,50 @@ export default function App() {
       .join(" / ");
   function card(m: Match) {
     const x = result(s, m);
-    const matchRound = s.rounds.find(r=>r.id===m.round);
-    const teamNames = (ids:string[])=>ids.map(id=>s.players.find(p=>p.id===id)?.name??"Unassigned").join(" / ");
+    const matchRound = s.rounds.find(r => r.id === m.round);
+    const onLeaderboard = page === "Live Leaderboard";
+    const expanded = onLeaderboard && expandedLeaderboardMatch === m.id;
+    const teamNames = (ids: string[]) => ids.map(id => s.players.find(p => p.id === id)?.name ?? "Unassigned").join(" / ");
     return (
       <article className="match championship-match" key={m.id}>
         <div className="championship-match-top">
-          <span>⛳ {matchRound?.name?.toUpperCase()??"MATCH"}</span>
-          <span className={"match-status-badge "+(x.complete?"match-final":x.played?"match-playing":"match-upcoming")}>{x.complete?"✓ FINAL":x.played?`● THRU ${x.played}`:"○ UPCOMING"}</span>
+          <span>⛳ {matchRound?.name?.toUpperCase() ?? "MATCH"}</span>
+          <span className={"match-status-badge " + (x.complete ? "match-final" : x.played ? "match-playing" : "match-upcoming")}>{x.complete ? "✓ FINAL" : x.played ? `● THRU ${x.played}` : "○ UPCOMING"}</span>
         </div>
-        <div className="championship-match-versus">
-          <div className="match-team-side match-team-usa"><div className="match-team-label">🇺🇸 AMERICA</div><strong>{teamNames(m.a)}</strong></div>
-          <div className="match-versus-mark">VS</div>
-          <div className="match-team-side match-team-europe"><div className="match-team-label">🇪🇺 EUROPE</div><strong>{teamNames(m.b)}</strong></div>
-        </div>
-        {matchRound?.format==="stableford"&&<p className="individual-points">{[...m.a,...m.b].map(id=>`${names([id])}: ${x.individual[id]??0} pts · ${stablefordNet(m,id)}`).join(" | ")}</p>}
-        <div className="championship-match-footer">
-          <strong>{x.status}</strong>
-          <span>{x.complete?`${x.points[0]} – ${x.points[1]} POINTS`:matchRound?.times[m.slot]??"TEE TIME TBD"}</span>
-        </div>
+        {onLeaderboard ? (
+          <button type="button" aria-expanded={expanded} aria-label={`View scorecard: ${teamNames(m.a)} versus ${teamNames(m.b)}`}
+            onClick={() => setExpandedLeaderboardMatch(expanded ? null : m.id)}
+            style={{display:"block",width:"100%",border:0,background:"transparent",padding:0,textAlign:"inherit",cursor:"pointer",color:"inherit"}}>
+            <div className="championship-match-versus">
+              <div className="match-team-side match-team-usa"><div className="match-team-label">🇺🇸 AMERICA</div><strong>{teamNames(m.a)}</strong></div>
+              <div className="match-versus-mark">VS</div>
+              <div className="match-team-side match-team-europe"><div className="match-team-label">🇪🇺 EUROPE</div><strong>{teamNames(m.b)}</strong></div>
+            </div>
+            {matchRound?.format === "stableford" && (
+              <p className="individual-points" style={{margin:"8px 12px"}}>
+                {[...m.a,...m.b].map(id => `${names([id])}: ${x.individual[id] ?? 0} pts`).join(" | ")}
+              </p>
+            )}
+            <div className="championship-match-footer">
+              <strong>{matchRound?.format === "stableford" ? `${x.totals[0]} – ${x.totals[1]} pts` : x.status}</strong>
+              <span>{expanded ? "Hide scorecard ▲" : "View scorecard ▼"}</span>
+            </div>
+          </button>
+        ) : (
+          <>
+            <div className="championship-match-versus">
+              <div className="match-team-side match-team-usa"><div className="match-team-label">🇺🇸 AMERICA</div><strong>{teamNames(m.a)}</strong></div>
+              <div className="match-versus-mark">VS</div>
+              <div className="match-team-side match-team-europe"><div className="match-team-label">🇪🇺 EUROPE</div><strong>{teamNames(m.b)}</strong></div>
+            </div>
+            {matchRound?.format === "stableford" && <p className="individual-points">{[...m.a,...m.b].map(id => `${names([id])}: ${x.individual[id] ?? 0} pts · ${stablefordNet(m,id)}`).join(" | ")}</p>}
+            <div className="championship-match-footer">
+              <strong>{x.status}</strong>
+              <span>{x.complete ? `${x.points[0]} – ${x.points[1]} POINTS` : matchRound?.times[m.slot] ?? "TEE TIME TBD"}</span>
+            </div>
+          </>
+        )}
+        {expanded && matchRound && <MatchLeaderboardScorecard state={s} match={m} round={matchRound} />}
       </article>
     );
   }
@@ -1914,6 +1941,35 @@ function MoneyCenter({state,admin,onSave}:{
       </tbody></table></div>
       {admin && <button className="primary" onClick={save}>Save paid amounts</button>}
     </section>
+  </div>;
+}
+
+function MatchLeaderboardScorecard({state,match,round}: {state:State;match:Match;round:State["rounds"][number]}) {
+  if(round.holes.length!==18)return <p style={{padding:12}}>Scorecard not available yet.</p>;
+  const entries=round.format==="scramble"
+    ?[{id:match.a[0],label:match.a.map(id=>state.players.find(p=>p.id===id)?.name??id).join(" / ")},
+      {id:match.b[0],label:match.b.map(id=>state.players.find(p=>p.id===id)?.name??id).join(" / ")}]
+    :[...match.a,...match.b].map(id=>({id,label:state.players.find(p=>p.id===id)?.name??id}));
+  const segments=[{start:0,end:9,label:"OUT"},{start:9,end:18,label:"IN"}];
+  return <div style={{padding:"12px 14px",borderTop:"1px solid #d9dfe9"}}>
+    <strong>{round.name} · Match scorecard</strong>
+    {segments.map(seg=><div key={seg.start} className="table-scroll" style={{overflowX:"auto",marginTop:10}}>
+      <table style={{width:"100%",minWidth:620,borderCollapse:"collapse",textAlign:"center",fontSize:12}}>
+        <thead><tr><th scope="col" style={{textAlign:"left"}}>Hole</th>{round.holes.slice(seg.start,seg.end).map((_,i)=><th scope="col" key={i}>{seg.start+i+1}</th>)}<th scope="col">{seg.label}</th></tr></thead>
+        <tbody>
+          <tr><th scope="row" style={{textAlign:"left"}}>Par</th>{round.holes.slice(seg.start,seg.end).map((h,i)=><td key={i}>{h.par}</td>)}<td>{round.holes.slice(seg.start,seg.end).reduce((v,h)=>v+h.par,0)}</td></tr>
+          {entries.map(e=>{
+            const scores=round.holes.slice(seg.start,seg.end).map((_,i)=>state.scores[key(match.id,e.id,seg.start+i)]?.gross);
+            const entered=scores.filter((v):v is number=>v!==undefined);
+            return <tr key={e.id}><th scope="row" style={{textAlign:"left",whiteSpace:"nowrap",paddingRight:8}}>{e.label}</th>
+              {scores.map((v,i)=><td key={i}>{v??"—"}</td>)}
+              <td><strong>{entered.length?entered.reduce((a,b)=>a+b,0):"—"}</strong></td>
+            </tr>;
+          })}
+        </tbody>
+      </table>
+    </div>)}
+    <p style={{fontSize:12,marginTop:10}}>Scores are gross strokes by hole. — means not entered.</p>
   </div>;
 }
 

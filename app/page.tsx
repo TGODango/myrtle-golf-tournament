@@ -1780,6 +1780,8 @@ function FoursomeScoreEntry({state,round,matches,player,hole,setHole,mode,onSave
       <p className="muted">Tap a hole to review or correct scores. Green = under par; outlined = over par.</p>
     </div>}
   </div>;
+}
+
 function LiveSkinWinners({state}:{state:State}) {
   const [selectedRound,setSelectedRound]=useState<string|null>(null);
   useEffect(()=>{

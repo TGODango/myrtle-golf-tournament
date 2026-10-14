@@ -74,21 +74,45 @@ export default function App() {
         request: string;
       }[]
     >([]);
+  function testWithLiveRoster(live: State, existing?: State): State {
+    const template = demo();
+    const sorted = [...live.players].sort((a,b)=>a.team-b.team);
+    if (sorted.length !== 12 || sorted.filter(p=>p.team===0).length !== 6 || sorted.filter(p=>p.team===1).length !== 6) return template;
+    const players = template.players.map((p,i)=>({
+      ...p, name:sorted[i].name, index:sorted[i].index,
+      team:sorted[i].team, captain:sorted[i].captain,
+      overrides:{...sorted[i].overrides},
+    }));
+    const old = existing && existing.players.length===12 ? existing : template;
+    return {
+      ...template,
+      players,
+      teams:[{name:"America",color:"#c62b47"},{name:"Europe",color:"#2b69d0"}],
+      rounds:template.rounds.map((r,i)=>({
+        ...r,
+        // Use the live course details where available; demo scores remain local only.
+        holes:live.rounds[i]?.holes.length===18?live.rounds[i].holes:r.holes,
+        rating:live.rounds[i]?.rating||r.rating,
+        slope:live.rounds[i]?.slope||r.slope,
+        tee:live.rounds[i]?.tee||r.tee,
+      })),
+      scores:old.scores,
+      audit:old.audit,
+    };
+  }
   function enterTestMode() {
     if (!user) { setNotice("Sign in before opening Test Mode"); return; }
-    const saved = localStorage.getItem("dango-test-v1");
-    let testState: State;
-    try { testState = saved ? JSON.parse(saved) : demo(); }
-    catch { testState = demo(); }
-    // Test Mode always uses fictional golfers and local-only scores.
-    if (testState.players.length !== 12 || testState.players.some(p => !p.name)) testState = demo();
+    let saved:State|undefined;
+    try { const raw=localStorage.getItem("dango-test-v1"); saved=raw?JSON.parse(raw):undefined; } catch {}
+    const testState=testWithLiveRoster(s,saved);
+    localStorage.setItem("dango-test-v1",JSON.stringify(testState));
     setS(testState);
     setPlayer("p0");
     setRound("r0");
     setHole(0);
     setPage("Live Scoring");
     setMode("demo");
-    setNotice("TEST MODE: Fictional golfers and scores stay on this device. Live tournament is unchanged.");
+    setNotice("TEST MODE: Real roster and teams, simulated local-only scores. LIVE tournament scores are untouched.");
   }
   async function exitTestMode() {
     setMode("cloud");
@@ -477,7 +501,7 @@ export default function App() {
           </div>
         </header>
         <div className="content">
-          {mode === "demo" && <div role="status" style={{padding:12,marginBottom:16,border:"2px solid #d5b56a",borderRadius:8,fontWeight:700}}>🧪 TEST MODE — Fictional golfers. Scores and changes are saved only on this device. NOT THE LIVE TOURNAMENT.</div>}
+          {mode === "demo" && <div role="status" style={{padding:12,marginBottom:16,border:"2px solid #d5b56a",borderRadius:8,fontWeight:700}}>🧪 TEST MODE — Real golfer names and teams, simulated scores saved ONLY on this device. NOT THE LIVE TOURNAMENT.</div>}
           {notice && (
             <div className="notice" role="status">
               {notice}
@@ -566,58 +590,25 @@ export default function App() {
                 page,
               ) && (
                 <>
-                  <section className="scoreboard">
-                    <div className="scoreboard-top">
-                      <span>
-                        <i />{" "}
-                        {totals.winner
-                          ? "TOURNAMENT RESULT"
-                          : "LIVE TOURNAMENT STANDINGS"}
-                      </span>
-                      <span>FIRST TO 9½ WINS</span>
-                    </div>
-                    <div className="score-line">
-                      <div className="team team-a">
-                        <div className="crest">
-                          {s.teams[0].name.slice(0, 1)}
-                        </div>
-                        <div>
-                          <small>TEAM A</small>
-                          <h2>{s.teams[0].name}</h2>
-                        </div>
+                  <section className="scoreboard championship-scoreboard">
+                    <div className="scoreboard-top"><span><i />{totals.winner?"TOURNAMENT RESULT":"LIVE CHAMPIONSHIP STANDINGS"}</span><span>FIRST TO 9½ WINS</span></div>
+                    <div className="championship-versus">
+                      <div className="championship-side championship-usa">
+                        <div className="championship-flag" aria-hidden="true">🇺🇸</div>
+                        <div className="championship-team-label">TEAM AMERICA</div>
+                        <div className="championship-points">{totals.official[0]}</div>
+                        <div className="championship-team-sub">UNITED STATES</div>
                       </div>
-                      <div className="points">
-                        {totals.official[0]}
-                        <span>—</span>
-                        {totals.official[1]}
-                      </div>
-                      <div className="team team-b">
-                        <div>
-                          <small>TEAM B</small>
-                          <h2>{s.teams[1].name}</h2>
-                        </div>
-                        <div className="crest">
-                          {s.teams[1].name.slice(0, 1)}
-                        </div>
+                      <div className="championship-slash" aria-label="versus">/</div>
+                      <div className="championship-side championship-europe">
+                        <div className="championship-flag" aria-hidden="true">🇪🇺</div>
+                        <div className="championship-team-label">TEAM EUROPE</div>
+                        <div className="championship-points">{totals.official[1]}</div>
+                        <div className="championship-team-sub">EUROPE</div>
                       </div>
                     </div>
-                    <div className="race">
-                      <div
-                        style={{ width: `${(totals.official[0] / 18) * 100}%` }}
-                      />
-                      <span
-                        style={{ width: `${(totals.official[1] / 18) * 100}%` }}
-                      />
-                    </div>
-                    <div className="scoreboard-bottom">
-                      <span>
-                        {totals.winner ??
-                          (totals.official[0] === totals.official[1]
-                            ? "The championship is level"
-                            : `${s.teams[totals.official[0] > totals.official[1] ? 0 : 1].name} leads the championship`)}
-                      </span>
-                      <small>{totals.remaining} POINTS STILL AVAILABLE</small>
-                    </div>
+                    <div className="championship-progress"><div style={{width:`${(totals.official[0]/18)*100}%`}}/><span style={{width:`${(totals.official[1]/18)*100}%`}}/></div>
+                    <div className="scoreboard-bottom"><span>{totals.winner??(totals.official[0]===totals.official[1]?"The championship is level":`${totals.official[0]>totals.official[1]?"America":"Europe"} leads the championship`)}</span><small>{totals.remaining} POINTS STILL AVAILABLE</small></div>
                   </section>
                   <div className="stats">
                     <div>
@@ -1781,7 +1772,7 @@ function FoursomeScoreEntry({state,round,matches,player,hole,setHole,mode,onSave
     {showCard&&<div className="scoring-card-detail">
       <div className="scoring-nine-switch"><button type="button" className={nine===0?"selected":""} onClick={()=>setNine(0)}>Front 9</button><button type="button" className={nine===1?"selected":""} onClick={()=>setNine(1)}>Back 9</button></div>
       <div className="table-scroll"><table className="scoring-scorecard"><thead><tr><th>Hole</th>{round.holes.slice(nine*9,nine*9+9).map((_,i)=><th key={i}><button type="button" className={hole===nine*9+i?"active-hole":""} onClick={()=>jump(nine*9+i)}>{nine*9+i+1}</button></th>)}<th>{nine===0?"OUT":"IN"}</th>{nine===1&&<th>TOTAL</th>}</tr><tr><th>Par</th>{round.holes.slice(nine*9,nine*9+9).map((h,i)=><th key={i}>{h.par}</th>)}<th>{ninePar}</th>{nine===1&&<th>{totalPar}</th>}</tr></thead><tbody>
-      {entries.map(e=><tr key={e.match+e.player}><th><span className="scorecard-team-flag">{teamFor(e)===0?"🇺🇸":"🇪🇺"}</span> {e.label}</th>{round.holes.slice(nine*9,nine*9+9).map((_,i)=>{const n=scored(e,nine*9+i);const par=round.holes[nine*9+i].par;return <td key={i}><button type="button" className={n==null?"":n<par?"under-par":n>par?"over-par":"at-par"} onClick={()=>jump(nine*9+i)}>{n??"—"}</button></td>})}<td className="scoring-nine-total">{sumRange(e,nine*9,nine*9+9)??"—"}</td>{nine===1&&<td className="scoring-grand-total">{sumRange(e,0,18)??"—"}</td>}</tr>)}
+      {entries.map(e=><tr className={teamFor(e)===0?"scorecard-row-usa":"scorecard-row-europe"} key={e.match+e.player}><th><span className="scorecard-team-flag">{teamFor(e)===0?"🇺🇸":"🇪🇺"}</span><span className="scorecard-player-name">{e.label}</span></th>{round.holes.slice(nine*9,nine*9+9).map((_,i)=>{const n=scored(e,nine*9+i);const par=round.holes[nine*9+i].par;return <td key={i}><button type="button" className={n==null?"":n<par?"under-par":n>par?"over-par":"at-par"} onClick={()=>jump(nine*9+i)}>{n??"—"}</button></td>})}<td className="scoring-nine-total">{sumRange(e,nine*9,nine*9+9)??"—"}</td>{nine===1&&<td className="scoring-grand-total">{sumRange(e,0,18)??"—"}</td>}</tr>)}
       </tbody></table></div>
       <p className="muted">Tap a hole to review or correct scores. Green = under par; outlined = over par.</p>
     </div>}

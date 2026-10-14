@@ -1205,3 +1205,54 @@ label select {
 .scoring-page .foursome-player .flag-player-title .team-flag{font-size:22px}
 .scoring-page .foursome-player .flag-player-title strong{font-size:14px}
 }
+
+/* USA / Europe championship scoreboard shared by leaderboard and results */
+.championship-scoreboard{padding:26px 30px 20px;background:#061b39;border:1px solid #274974;border-radius:20px;box-shadow:0 14px 34px #071b3840}
+.championship-scoreboard .scoreboard-top{color:#d7e8ff;font-weight:900}
+.championship-versus{display:grid;grid-template-columns:minmax(0,1fr) 42px minmax(0,1fr);gap:4px;align-items:stretch;margin:22px 0 20px}
+.championship-side{min-width:0;text-align:center;position:relative;overflow:hidden;border-radius:16px;padding:20px 10px 18px;border:1px solid #ffffff35}
+.championship-usa{background:linear-gradient(125deg,#041b45e8,#0d3268c7 58%,#9c1429a3),url('/flag-usa.svg') center/cover no-repeat}
+.championship-europe{background:radial-gradient(circle at 82% 18%,#ffda42 0 5px,transparent 6px),radial-gradient(circle at 67% 11%,#ffda42 0 5px,transparent 6px),radial-gradient(circle at 49% 18%,#ffda42 0 5px,transparent 6px),radial-gradient(circle at 85% 39%,#ffda42 0 5px,transparent 6px),linear-gradient(135deg,#061954,#1148b1)}
+.championship-flag{font-size:49px;line-height:1.1;filter:drop-shadow(0 2px 6px #0005)}
+.championship-team-label{font-weight:900;letter-spacing:2px;color:white;font-size:17px;margin:9px 0 2px}
+.championship-points{font-size:78px;font-family:Manrope,Arial,sans-serif;font-weight:900;line-height:1.1;color:white;text-shadow:0 3px 12px #0007}
+.championship-team-sub{font-size:10px;font-weight:800;letter-spacing:2px;color:#e1ebfa}
+.championship-slash{display:flex;align-items:center;justify-content:center;font-size:56px;font-weight:300;color:#ffd166;text-shadow:0 2px 6px #0008}
+.championship-progress{height:9px;background:#244064;display:flex;border-radius:10px;overflow:hidden;margin-bottom:16px}
+.championship-progress div{background:#e62e50}
+.championship-progress span{background:#ffcf43;margin-left:auto}
+.championship-scoreboard .scoreboard-bottom{color:#d9e5f7}
+.championship-scoreboard .scoreboard-bottom small{color:#b8cbe5}
+.championship-results{background:linear-gradient(180deg,#f1f6ff,#fff)!important;border:1px solid #cbd9ee!important;border-radius:16px;padding:24px}
+.championship-results h2{background:#081f45;color:white;padding:16px 18px;border-radius:12px;font-weight:900;display:flex;justify-content:center;align-items:center;gap:16px;text-align:center}
+.championship-results .results-vs{color:#ffd15c;font-size:28px}
+.championship-results>p{color:#344c6e;font-weight:700}
+.championship-results table{border-collapse:separate;border-spacing:0 6px}
+.championship-results thead th{background:#e4ebf5;color:#183457;font-weight:900}
+.championship-results .result-us{background:#fce8ed;color:#a11232}
+.championship-results .result-eu{background:#e2ebff;color:#10459d}
+.championship-results tbody tr{background:#fff;box-shadow:0 2px 9px #092b5b0e}
+.championship-results tbody td:nth-child(2){font-weight:900;color:#c21e42}
+.championship-results tbody td:nth-child(3){font-weight:900;color:#1754b6}
+.scoring-scorecard{border-collapse:separate;border-spacing:0 3px}
+.scoring-scorecard .scorecard-row-usa{background:#fff0f3}
+.scoring-scorecard .scorecard-row-europe{background:#eaf1ff}
+.scoring-scorecard tbody tr th{display:flex;align-items:center;gap:7px;min-width:135px;font-weight:900;color:#092752;padding:9px 7px}
+.scoring-scorecard .scorecard-team-flag{font-size:20px;flex-shrink:0}
+.scoring-scorecard .scorecard-player-name{line-height:1.2;text-align:left}
+.scoring-scorecard tbody tr td{border-bottom:1px solid #d9e2ef}
+.scoring-scorecard .scoring-grand-total{background:#b8d0fa;color:#06285c;font-size:15px}
+@media(max-width:760px){
+.championship-scoreboard{padding:16px 12px}
+.championship-versus{grid-template-columns:minmax(0,1fr) 20px minmax(0,1fr);gap:2px;margin:16px 0}
+.championship-side{padding:14px 4px}
+.championship-flag{font-size:35px}
+.championship-team-label{font-size:12px;letter-spacing:.8px}
+.championship-points{font-size:52px}
+.championship-team-sub{font-size:8px;letter-spacing:.7px}
+.championship-slash{font-size:32px}
+.championship-results{padding:10px}
+.championship-results h2{font-size:16px;gap:8px;padding:13px 7px}
+.championship-results table{font-size:11px}
+.scoring-scorecard tbody tr th{min-width:125px}
+}

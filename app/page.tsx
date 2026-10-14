@@ -463,7 +463,7 @@ export default function App() {
         <div className="intro-light intro-light-right" aria-hidden="true" />
         <div className="intro-stage">
           <div className="intro-kicker">2026 · MYRTLE BEACH CHAMPIONSHIP</div>
-          <div className="intro-logo" aria-label="DangoGolf"><img src="/dangogolf-mark.svg" alt="DangoGolf American flag championship logo" /></div>
+          <div className="intro-logo" aria-label="DangoGolf"><img src="/dangogolf-approved.webp" alt="DangoGolf American flag championship logo" /></div>
           <div className="intro-teams"><span>🇺🇸 AMERICA</span><b>VS</b><span>EUROPE 🇪🇺</span></div>
           <h1>WELCOME YOU FUCKERS<br /><em>TO MY PAGE!</em></h1>
           <p>12 GOLFERS. 5 ROUNDS. 18 POINTS. ONE CHAMPION.</p>
@@ -473,11 +473,9 @@ export default function App() {
       </div>}
       {!tv && (
         <aside className={mobile ? "open" : ""}>
-          <div className="brand">
-            <Flag size={28} />
-            <div>
-              DANGO GOLF<small>MYRTLE BEACH CHAMPIONSHIP</small>
-            </div>
+          <div className="brand dango-brand">
+            <img src="/dangogolf-approved.webp" alt="DangoGolf" />
+            <small>MYRTLE BEACH CHAMPIONSHIP</small>
           </div>
           <div className="edition">🇺🇸 USA  VS  EUROPE 🇪🇺 · 2026</div><button type="button" className="intro-replay" onClick={()=>setShowIntro(true)}>▶ Replay Championship Intro</button>
           <nav>

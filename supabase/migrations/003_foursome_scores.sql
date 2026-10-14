@@ -47,5 +47,5 @@ begin
  t.state:=jsonb_set(t.state,array['audit'],jsonb_build_array(jsonb_build_object('at',now(),'message','Foursome scores saved for '||round_id||' hole '||(p_entries->0->>'hole')))||coalesce(t.state->'audit','[]'));
  update tournaments set state=t.state,revision=revision+1 where id=1;
 end $$;
-revoke all on function public.submit_foursome_scores(jsonb,uuid) from public;
+revoke all on function public.submit_foursome_scores(jsonb,uuid) from public, anon;
 grant execute on function public.submit_foursome_scores(jsonb,uuid) to authenticated;

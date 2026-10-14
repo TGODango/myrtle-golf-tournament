@@ -1777,7 +1777,7 @@ function FoursomeScoreEntry({state,round,matches,player,hole,setHole,mode,onSave
       onNotice("All "+entries.length+" scores saved for hole "+(hole+1));
       if(hole<17){setHole(hole+1);localStorage.setItem("dango-scoring-hole:"+mode+":"+round.id+":"+player,String(hole+1));}
 
-    }catch(err){onNotice("Scores NOT saved: "+(err instanceof Error?err.message:String(err))+". Review and retry.");}
+    }catch(err){onNotice("Scores NOT saved: "+(err && typeof err==="object" && "message" in err ? String(err.message) : err instanceof Error ? err.message : typeof err==="string" ? err : JSON.stringify(err))+(err && typeof err==="object" && "code" in err ? " (code: "+String(err.code)+")" : "")+". Review and retry.");}
     finally{setSaving(false);}
   }
   if(!mine)return <p>You're not assigned to a foursome for this round.</p>;

@@ -129,9 +129,11 @@ test("scramble 35/15 weighted team handicap and relative stroke allocation",()=>
   assert.equal(america,3);
   assert.equal(europe,5);
   assert.equal(strokes(europe-america,1),1);
-  // At handicap-ranked hole 1, Europe's gross +1 still nets a tie.
+  // Europe receives strokes on the two hardest holes; +1 on both nets out the advantage.
   const idx=r.holes.findIndex(h=>h.rank===1);
   s.scores[key(m.id,m.b[0],idx)].gross++;
+  const second=r.holes.findIndex(h=>h.rank===2);
+  s.scores[key(m.id,m.b[0],second)].gross++;
   assert.equal(result(s,m).complete,true);
   assert.equal(result(s,m).lead,0);
 });

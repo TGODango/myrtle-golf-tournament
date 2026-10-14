@@ -493,7 +493,7 @@ export default function App() {
               </button>
             ))}
           </nav>
-          <div className="sidebar-replay-bottom"><button type="button" className="intro-replay" onClick={()=>setShowIntro(true)}>▶ Replay Championship Intro</button></div>
+          
         </aside>
       )}
       <main>

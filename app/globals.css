@@ -1125,3 +1125,59 @@ label select {
 .foursome-stepper button{min-width:36px;width:40px;height:43px}
 .scoring-scorecard{min-width:630px}
 }
+
+/* Championship identity: high-contrast navy and flags, not the old pale-green shell */
+.shell:not(.tv) aside{background:linear-gradient(180deg,#061a34 0%,#092849 52%,#06172d 100%);border-right:1px solid #173b65;color:#fff}
+.shell:not(.tv) aside .brand{font-family:Manrope,Arial,sans-serif;font-size:19px;letter-spacing:-.5px;color:#fff}
+.shell:not(.tv) aside .brand svg{color:#f5c44a}
+.shell:not(.tv) aside .brand small{color:#8fc8ff;font-size:8px;letter-spacing:1.25px}
+.shell:not(.tv) aside .edition{color:#b6c9e4;font-weight:800;letter-spacing:.5px;margin:27px 0 16px}
+.shell:not(.tv) aside nav{gap:5px}
+.shell:not(.tv) aside nav button{color:#e3ecf9;font-weight:700;border-radius:11px;padding:12px 11px;font-size:12px;transition:background .15s ease}
+.shell:not(.tv) aside nav button:hover{background:#1a3f6c;filter:none}
+.shell:not(.tv) aside nav button.active{background:linear-gradient(110deg,#067c4a,#075337);border-left:4px solid #3be18b;color:white;box-shadow:0 3px 14px #0003}
+.shell:not(.tv) aside nav button span{color:#ffc247}
+.shell:not(.tv) aside .sidebar-footer{color:#d8e5f5;border-top:1px solid #325274}
+.shell:not(.tv) aside .sidebar-footer small{color:#9db6d4}
+.scoring-page{background:#f0f4fa}
+.scoring-page header{background:#071e3c;color:white;border-bottom:3px solid #cc253c}
+.scoring-page header .muted{color:#9db9d9}
+.scoring-page header .connection{color:#b8e4c8}
+.scoring-page .content{max-width:1150px}
+.scoring-page .page-title{background:linear-gradient(110deg,rgba(5,24,53,.94),rgba(11,54,105,.79)),linear-gradient(135deg,#426e91,#132e53);border-radius:16px;color:white;padding:20px 24px;box-shadow:0 8px 22px #102c4a26}
+.scoring-page .page-title h1,.scoring-page .page-title h2{color:#fff}
+.scoring-page .page-title .eyebrow,.scoring-page .page-title p{color:#d3e2f7}
+.scoring-page .panel{background:#fff;border:1px solid #d9e2ee;border-radius:18px;box-shadow:0 8px 28px #12335b0d}
+.scoring-page .section-heading{border-bottom:2px solid #e1e8f3;padding-bottom:12px}
+.scoring-page .section-heading h2{color:#0c2b56;font-weight:900}
+.scoring-page .foursome-entry{background:linear-gradient(180deg,#fff,#f2f6fc);border:1px solid #cad8e9;border-radius:20px;padding:20px;box-shadow:0 12px 30px #102e5c18}
+.scoring-page .foursome-heading h2{font-size:34px;letter-spacing:-1.3px}
+.scoring-page .foursome-heading .eyebrow{font-size:10px;color:#195d9d}
+.scoring-page .foursome-score-grid{gap:14px;margin:18px 0}
+.scoring-page .foursome-player{min-height:150px;padding:16px;border-radius:16px}
+.scoring-page .foursome-player.flag-usa{background:linear-gradient(105deg,#04183ac9,#0a2a67a6 55%,#a00d2acc),repeating-linear-gradient(0deg,#fff 0px,#fff 11px,#d51b39 11px,#d51b39 22px);border:2px solid #d12a45}
+.scoring-page .foursome-player.flag-europe{background:radial-gradient(circle at 80% 20%,#ffdb38 0 5px,transparent 6px),radial-gradient(circle at 60% 12%,#ffdb38 0 5px,transparent 6px),radial-gradient(circle at 42% 27%,#ffdb38 0 5px,transparent 6px),radial-gradient(circle at 78% 45%,#ffdb38 0 5px,transparent 6px),linear-gradient(130deg,#04175b,#0d44b3);border:2px solid #1245bc}
+.scoring-page .foursome-player .flag-player-title strong{font-size:20px;color:white}
+.scoring-page .foursome-player .team-flag{font-size:28px}
+.scoring-page .foursome-stepper{background:#fff;border:1px solid #dbe3ee;padding:7px;border-radius:12px}
+.scoring-page .foursome-stepper strong{font-size:40px;color:#081c3c}
+.scoring-page .foursome-stepper button{background:#e7edf6;color:#092b59;border-radius:10px}
+.scoring-page .foursome-save{background:linear-gradient(#16a550,#007936)!important;min-height:62px;font-size:18px;box-shadow:0 5px 13px #11813d45}
+.scoring-page .scoring-card-toggle{border-top:1px solid #d5dfeb}
+.scoring-page .scoring-card-toggle>button{font-size:16px}
+.scoring-page .scoring-nine-switch button.selected{background:#0a56ac}
+.scoring-page .scoring-scorecard th{background:#e3ecf8}
+@media(max-width:760px){
+.scoring-page .content{padding:12px 12px 25px}
+.scoring-page .page-title{padding:13px 15px;margin-bottom:12px}
+.scoring-page .panel{padding:12px}
+.scoring-page .foursome-entry{padding:12px;margin:10px 0}
+.scoring-page .foursome-heading h2{font-size:29px}
+.scoring-page .foursome-score-grid{gap:9px;margin:13px 0}
+.scoring-page .foursome-player{min-height:120px;padding:10px}
+.scoring-page .foursome-player .flag-player-title strong{font-size:15px}
+.scoring-page .foursome-player .team-flag{font-size:22px}
+.scoring-page .foursome-stepper strong{font-size:30px}
+.scoring-page .foursome-stepper button{width:39px;min-width:35px;height:44px}
+.scoring-page .foursome-save{min-height:57px;font-size:15px}
+}

@@ -1014,3 +1014,31 @@ label select {
     font-size: 13px;
   }
 }
+
+
+/* App-like round selection and skins results */
+.round-picker{display:flex;gap:9px;overflow-x:auto;padding:3px 2px 14px;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch}
+.round-picker button{flex:1 0 135px;max-width:210px;min-height:64px;flex-direction:column;align-items:flex-start;gap:5px;text-align:left;font-weight:800;border-radius:12px;scroll-snap-align:start}
+.round-picker button small{font-size:10px;font-weight:500;opacity:.8;white-space:normal}
+.skin-header{display:flex;justify-content:space-between;align-items:center;gap:16px}
+.skin-header h2{margin:8px 0 4px}
+.skin-header p{margin:0}
+.skin-progress{font-size:23px;font-weight:800;color:#16803c;text-align:right}
+.skin-progress small{display:block;font-size:9px;letter-spacing:1px;color:#829087}
+.skin-hole-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:20px}
+.skin-hole{display:flex;align-items:center;gap:14px;border:1px solid var(--line);border-radius:12px;padding:14px;background:#fafbf9;min-width:0}
+.skin-hole-won{border-color:#a3d1b2;background:#f0f9f1}
+.skin-hole-number{min-width:40px;text-align:center}
+.skin-hole-number small,.skin-hole-result small{display:block;font-size:10px;color:#89958b}
+.skin-hole-number strong{font-size:26px}
+.skin-hole-result{min-width:0;overflow-wrap:anywhere}
+.skin-hole-result strong{font-size:13px}
+.skin-hole-result small{margin-top:6px}
+.skin-winner{color:#16803c;font-weight:800}
+.skin-winner span{display:block;font-size:10px;letter-spacing:.7px;margin-top:3px}
+@media(max-width:760px){
+ .skin-hole-list{grid-template-columns:1fr;gap:8px}
+ .skin-hole{padding:13px}
+ .live-skins .panel{padding:16px}
+ .round-picker button{flex-basis:125px}
+}

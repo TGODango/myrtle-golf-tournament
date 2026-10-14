@@ -1970,8 +1970,10 @@ function MatchLeaderboardScorecard({state,match,round}: {state:State;match:Match
                 const square=diff!==null&&diff>0;
                 const double=diff!==null&&Math.abs(diff)>=2;
                 return <td key={i}><span title={label} aria-label={v===undefined?"Not entered":`${v} strokes, ${label}`}
-                  style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:28,height:28,boxSizing:"border-box",borderRadius:circle?"50%":0,border:circle||square?(double?"4px double currentColor":"2px solid currentColor"):"2px solid transparent",fontWeight:600}}>
-                  {v??"—"}
+                  style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:32,height:32,boxSizing:"border-box",borderRadius:circle?"50%":0,border:double?"2px solid currentColor":"2px solid transparent",fontWeight:600}}>
+                  <span aria-hidden="true" style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:double?23:26,height:double?23:26,boxSizing:"border-box",borderRadius:circle?"50%":0,border:circle||square?"2px solid currentColor":"2px solid transparent"}}>
+                    {v??"—"}
+                  </span>
                 </span></td>;
               })}
               <td><strong>{entered.length?entered.reduce((a,b)=>a+b,0):"—"}</strong></td>

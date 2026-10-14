@@ -782,62 +782,7 @@ export default function App() {
                           <h2>{r.name}</h2>
                           <span>{result(s, mine).status}</span>
                         </div>
-                        <div className="hole-nav">
-                          {r.holes.map((_, i) => (
-                            <button
-                              className={hole === i ? "selected" : ""}
-                              key={i}
-                              onClick={() => {
-                                setHole(i);
-                                setGross(
-                                  s.scores[key(mine.id, r.format === "scramble" ? (mine.a.includes(player) ? mine.a[0] : mine.b[0]) : player, i)]?.gross ??
-                                    r.holes[i].par,
-                                );
-                              }}
-                            >
-                              {i + 1}
-                              {s.scores[key(mine.id, player, i)] && (
-                                <Check size={10} />
-                              )}
-                            </button>
-                          ))}
-                        </div>
                         <FoursomeScoreEntry state={s} round={r} matches={matches} player={player} hole={hole} setHole={setHole} mode={mode} onSaved={async(next)=>{if(mode==="demo"){setS(next);localStorage.setItem("dango-test-v1",JSON.stringify(next));}else await load();}} onNotice={setNotice}/>
-                        <div className="table-scroll">
-                          <table>
-                            <thead>
-                              <tr>
-                                <th>Foursome</th>
-                                {r.holes.map((_, i) => (
-                                  <th key={i}>{i + 1}</th>
-                                ))}
-                                <th>Total</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {(r.format === "scramble" ? [mine.a[0],mine.b[0]] : [...mine.a, ...mine.b]).map((id) => (
-                                <tr key={id}>
-                                  <th>{names([id])}</th>
-                                  {r.holes.map((_, i) => (
-                                    <td key={i}>
-                                      {s.scores[key(mine.id, id, i)]?.gross ??
-                                        "—"}
-                                    </td>
-                                  ))}
-                                  <td>
-                                    {r.holes.reduce(
-                                      (v, _, i) =>
-                                        v +
-                                        (s.scores[key(mine.id, id, i)]?.gross ??
-                                          0),
-                                      0,
-                                    )}
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
                       </>
                     ) : (
                       <p>Your match or course scorecard is not ready yet.</p>
@@ -1768,11 +1713,11 @@ function FoursomeScoreEntry({state,round,matches,player,hole,setHole,mode,onSave
     :[...m.a,...m.b].map(id=>({match:m.id,player:id,label:state.players.find(p=>p.id===id)?.name??id})));
   const [values,setValues]=useState<Record<string,number>>({});
   const [saving,setSaving]=useState(false);
-  const [touched,setTouched]=useState(false);
+  const [showCard,setShowCard]=useState(false);
   const signature=round.id+":"+group.map(m=>m.id).join(",")+":"+hole;
-  useEffect(()=>{setValues({});setTouched(false);},[signature]);
+  useEffect(()=>{setValues({});},[signature]);
   const scoreFor=(e:typeof entries[number])=>values[e.match+":"+e.player]??state.scores[key(e.match,e.player,hole)]?.gross??round.holes[hole]?.par??4;
-  const change=(e:typeof entries[number],delta:number)=>{setTouched(true);setValues(v=>({...v,[e.match+":"+e.player]:Math.min(30,Math.max(1,scoreFor(e)+delta))}));};
+  const change=(e:typeof entries[number],delta:number)=>{setValues(v=>({...v,[e.match+":"+e.player]:Math.min(30,Math.max(1,scoreFor(e)+delta))}));};
   async function saveAll(){
     if(!mine||saving)return;
     if(!round.locked||!round.verified&&mode==="cloud"||round.holes.length!==18||group.some(m=>!m.approved)){onNotice("Verified course and locked approved pairings required");return;}
@@ -1794,15 +1739,19 @@ function FoursomeScoreEntry({state,round,matches,player,hole,setHole,mode,onSave
         await onSaved(state);
       }
       onNotice("All "+entries.length+" scores saved for hole "+(hole+1));
-      if(hole<17)setHole(hole+1);
-      setTouched(false);
+      if(hole<17){setHole(hole+1);localStorage.setItem("dango-scoring-hole:"+mode+":"+round.id+":"+player,String(hole+1));}
+
     }catch(err){onNotice("Scores NOT saved: "+(err instanceof Error?err.message:String(err))+". Review and retry.");}
     finally{setSaving(false);}
   }
   if(!mine)return <p>You're not assigned to a foursome for this round.</p>;
+  const jump=(n:number)=>{const next=Math.max(0,Math.min(17,n));setHole(next);localStorage.setItem("dango-scoring-hole:"+mode+":"+round.id+":"+player,String(next));};
+  const scored=(e:typeof entries[number],i:number)=>state.scores[key(e.match,e.player,i)]?.gross;
+  const scoredCount=Array.from({length:18},(_,i)=>entries.length>0&&entries.every(e=>scored(e,i)!=null)).filter(Boolean).length;
+  const [nine,setNine]=useState(0);
   return <div className="foursome-entry">
-    <div className="foursome-heading"><div><div className="eyebrow">FOURSOME SCOREKEEPER</div><h2>Hole {hole+1} · Par {round.holes[hole]?.par}</h2></div><span>{round.format==="scramble"?"2 TEAM SCORES":"4 GOLFER SCORES"}</span></div>
-    <p>One golfer enters the whole group. Anyone in this foursome can take over.</p>
+    <div className="foursome-heading"><div><div className="eyebrow">{round.name.toUpperCase()} · LIVE SCORING</div><h2>Hole {hole+1} <span className="scoring-par">· Par {round.holes[hole]?.par}</span></h2></div><span>{round.format==="scramble"?"2 TEAM SCORES":"4 GOLFER SCORES"}</span></div>
+    <div className="scoring-nav"><button type="button" onClick={()=>jump(hole-1)} disabled={hole===0}>← Previous</button><span>{scoredCount} of 18 holes complete</span><button type="button" onClick={()=>jump(hole+1)} disabled={hole===17}>Next →</button></div>
     <div className="foursome-score-grid">
       {entries.map((e,i)=><div className="foursome-player" key={e.match+":"+e.player}>
         <div><small>{round.format==="scramble"?"TEAM "+(i+1):"GOLFER "+(i+1)}</small><strong>{e.label}</strong></div>
@@ -1813,11 +1762,17 @@ function FoursomeScoreEntry({state,round,matches,player,hole,setHole,mode,onSave
         </div>
       </div>)}
     </div>
-    <button className="primary foursome-save" disabled={saving||!entries.length} onClick={saveAll}><Check size={19}/>{saving?"Saving scores…":hole===17?"Save All Scores · Finish":"Save All Scores & Next Hole"}</button>
-    <p className="muted">Scores are saved together. Corrections require reviewing the current values.</p>
+    <button className="primary foursome-save" disabled={saving||!entries.length} onClick={async()=>{await saveAll();}}><Check size={19}/>{saving?"Saving scores…":hole===17?"Save All Scores · Finish":"Save All Scores & Next Hole"}</button>
+    <p className="scoring-save-hint">All scores save together. Your next hole will be ready when you return.</p>
+    <div className="scoring-card-toggle"><button type="button" onClick={()=>setShowCard(v=>!v)} aria-expanded={showCard}>{showCard?"▾ Hide Full Scorecard":"▸ View Full Scorecard"} <span>{scoredCount}/18 complete</span></button></div>
+    {showCard&&<div className="scoring-card-detail">
+      <div className="scoring-nine-switch"><button type="button" className={nine===0?"selected":""} onClick={()=>setNine(0)}>Front 9</button><button type="button" className={nine===1?"selected":""} onClick={()=>setNine(1)}>Back 9</button></div>
+      <div className="table-scroll"><table className="scoring-scorecard"><thead><tr><th>Hole</th>{round.holes.slice(nine*9,nine*9+9).map((_,i)=><th key={i}><button type="button" className={hole===nine*9+i?"active-hole":""} onClick={()=>jump(nine*9+i)}>{nine*9+i+1}</button></th>)}<th>{nine===0?"OUT":"IN"}</th></tr><tr><th>Par</th>{round.holes.slice(nine*9,nine*9+9).map((h,i)=><th key={i}>{h.par}</th>)}<th>{round.holes.slice(nine*9,nine*9+9).reduce((v,h)=>v+h.par,0)}</th></tr></thead><tbody>
+      {entries.map(e=><tr key={e.match+e.player}><th>{e.label}</th>{round.holes.slice(nine*9,nine*9+9).map((_,i)=>{const n=scored(e,nine*9+i);const par=round.holes[nine*9+i].par;return <td key={i}><button type="button" className={n==null?"":n<par?"under-par":n>par?"over-par":"at-par"} onClick={()=>jump(nine*9+i)}>{n??"—"}</button></td>})}<td>{round.holes.slice(nine*9,nine*9+9).reduce((v,_,i)=>v+(scored(e,nine*9+i)??0),0)||"—"}</td></tr>)}
+      </tbody></table></div>
+      <p className="muted">Tap a hole to review or correct scores. Green = under par; outlined = over par.</p>
+    </div>}
   </div>;
-}
-
 function LiveSkinWinners({state}:{state:State}) {
   const [selectedRound,setSelectedRound]=useState<string|null>(null);
   useEffect(()=>{

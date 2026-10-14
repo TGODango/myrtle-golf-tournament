@@ -1058,3 +1058,27 @@ label select {
 .foursome-stepper button{width:48px;height:48px;padding:0;border-radius:12px;background:#edf4ed}
 .foursome-save{width:100%;min-height:54px;border-radius:12px;font-size:15px;font-weight:800}
 @media(max-width:760px){.foursome-entry{padding:13px}.foursome-score-grid{gap:8px}.foursome-player{padding:10px}.foursome-stepper button{width:43px;height:47px}.foursome-stepper strong{font-size:26px}.foursome-heading h2{font-size:22px}}
+
+/* Cart-first live scoring */
+.scoring-par{font-size:.72em;font-weight:600;color:#64816a}
+.scoring-nav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:14px 0 4px}
+.scoring-nav button{padding:9px 12px;border:1px solid #cdded0;background:white;border-radius:10px;font-weight:700;font-size:12px}
+.scoring-nav button:disabled{opacity:.35}
+.scoring-nav span{font-size:11px;color:#718175;text-align:center}
+.scoring-save-hint{text-align:center;color:#64816a;font-size:11px;margin:10px 0 4px}
+.scoring-card-toggle{margin-top:18px;border-top:1px solid #dce7d9;padding-top:12px}
+.scoring-card-toggle>button{width:100%;display:flex;justify-content:space-between;align-items:center;text-align:left;padding:12px 4px;font-weight:800;background:transparent;color:#214d30}
+.scoring-card-toggle span{font-size:11px;font-weight:600;color:#728276}
+.scoring-card-detail{padding-top:6px}
+.scoring-nine-switch{display:flex;gap:8px;margin:5px 0 12px}
+.scoring-nine-switch button{flex:1;padding:10px;border-radius:9px;background:#e9efe9;font-weight:700}
+.scoring-nine-switch button.selected{background:#1e5935;color:white}
+.scoring-scorecard{min-width:570px;font-size:12px}
+.scoring-scorecard th,.scoring-scorecard td{padding:8px 5px;text-align:center;white-space:nowrap}
+.scoring-scorecard th:first-child{text-align:left;max-width:125px;white-space:normal}
+.scoring-scorecard button{min-width:26px;min-height:28px;border-radius:7px;padding:2px;font-size:12px}
+.scoring-scorecard .active-hole{background:#245b35;color:white}
+.scoring-scorecard .under-par{border:2px solid #16803c;border-radius:50%;color:#16803c;font-weight:800}
+.scoring-scorecard .over-par{border:2px solid #8c7254;border-radius:3px}
+.scoring-scorecard .at-par{font-weight:700}
+@media(max-width:760px){.foursome-entry{margin:4px 0 12px}.foursome-score-grid{margin:12px 0}.foursome-player{gap:7px}.foursome-player>div:first-child{min-height:34px}.foursome-heading h2{font-size:25px}.scoring-nav button{padding:10px 8px}}

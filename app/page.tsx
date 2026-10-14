@@ -1728,7 +1728,6 @@ function FoursomeScoreEntry({state,round,matches,player,hole,setHole,mode,onSave
   async function saveAll(){
     if(!mine||saving)return;
     if(!round.locked||!round.verified&&mode==="cloud"||round.holes.length!==18||group.some(m=>!m.approved)){onNotice("Verified course and locked approved pairings required");return;}
-    if(!touched&&!entries.every(e=>state.scores[key(e.match,e.player,hole)])){onNotice("Review the foursome scores, then adjust or confirm before saving.");return;}
     const batch=entries.map(e=>({match:e.match,player:e.player,hole,gross:scoreFor(e),expected:state.scores[key(e.match,e.player,hole)]?.version??0}));
     setSaving(true);
     try{

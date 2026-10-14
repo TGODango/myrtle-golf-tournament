@@ -442,7 +442,7 @@ export default function App() {
                   setMobile(false);
                 }}
               >
-                <span>{["✎", "▥", "★", "⚑", "▦", "♧", "⇄", "♜", "🏆", "$", "⌂", "⚙"][i]}</span>
+                <span className={i % 3 === 0 ? "nav-icon-gold" : "nav-icon-white"}>{["✎", "▥", "★", "⚑", "▦", "♧", "⇄", "♜", "🏆", "$", "⌂", "⚙"][i]}</span>
                 {n}
               </button>
             ))}
@@ -1766,8 +1766,8 @@ function FoursomeScoreEntry({state,round,matches,player,hole,setHole,mode,onSave
     <div className="foursome-heading"><div><div className="eyebrow">{round.name.toUpperCase()} · LIVE SCORING</div><h2>Hole {hole+1} <span className="scoring-par">· Par {round.holes[hole]?.par}</span></h2></div><span className="scoring-live-pill">● LIVE</span></div>
     <div className="scoring-nav"><button type="button" onClick={()=>jump(hole-1)} disabled={hole===0}>← Previous</button><span>{scoredCount} of 18 holes complete</span><button type="button" onClick={()=>jump(hole+1)} disabled={hole===17}>Next →</button></div>
     <div className="foursome-score-grid">
-      {entries.map((e,i)=><div className="foursome-player" key={e.match+":"+e.player}>
-        <div><small>{round.format==="scramble"?"TEAM "+(i+1):"GOLFER "+(i+1)}</small><strong>{e.label}</strong></div>
+      {entries.map((e,i)=><div className={"foursome-player "+(teamFor(e)===0?"flag-usa":"flag-europe")} key={e.match+":"+e.player}>
+        <div className="flag-player-title"><span className="team-flag" aria-label={teamFor(e)===0?"USA":"Europe"}>{teamFor(e)===0?"🇺🇸":"🇪🇺"}</span><strong>{e.label}</strong></div>
         <div className="foursome-stepper">
           <button type="button" aria-label={"Decrease score for "+e.label} onClick={()=>change(e,-1)}><Minus size={20}/></button>
           <strong>{scoreFor(e)}</strong>

@@ -1755,8 +1755,15 @@ function FoursomeScoreEntry({state,round,matches,player,hole,setHole,mode,onSave
   const scored=(e:typeof entries[number],i:number)=>state.scores[key(e.match,e.player,i)]?.gross;
   const scoredCount=Array.from({length:18},(_,i)=>entries.length>0&&entries.every(e=>scored(e,i)!=null)).filter(Boolean).length;
   const [nine,setNine]=useState(0);
+  const teamFor=(e:typeof entries[number])=>state.players.find(p=>p.id===e.player)?.team??0;
+  const sumRange=(e:typeof entries[number],start:number,end:number)=>{
+    const scores=Array.from({length:end-start},(_,i)=>scored(e,start+i));
+    return scores.every((n):n is number=>n!=null)?scores.reduce((a,b)=>a+b,0):null;
+  };
+  const totalPar=round.holes.reduce((v,h)=>v+h.par,0);
+  const ninePar=round.holes.slice(nine*9,nine*9+9).reduce((v,h)=>v+h.par,0);
   return <div className="foursome-entry">
-    <div className="foursome-heading"><div><div className="eyebrow">{round.name.toUpperCase()} · LIVE SCORING</div><h2>Hole {hole+1} <span className="scoring-par">· Par {round.holes[hole]?.par}</span></h2></div><span>{round.format==="scramble"?"2 TEAM SCORES":"4 GOLFER SCORES"}</span></div>
+    <div className="foursome-heading"><div><div className="eyebrow">{round.name.toUpperCase()} · LIVE SCORING</div><h2>Hole {hole+1} <span className="scoring-par">· Par {round.holes[hole]?.par}</span></h2></div><span className="scoring-live-pill">● LIVE</span></div>
     <div className="scoring-nav"><button type="button" onClick={()=>jump(hole-1)} disabled={hole===0}>← Previous</button><span>{scoredCount} of 18 holes complete</span><button type="button" onClick={()=>jump(hole+1)} disabled={hole===17}>Next →</button></div>
     <div className="foursome-score-grid">
       {entries.map((e,i)=><div className="foursome-player" key={e.match+":"+e.player}>
@@ -1773,8 +1780,8 @@ function FoursomeScoreEntry({state,round,matches,player,hole,setHole,mode,onSave
     <div className="scoring-card-toggle"><button type="button" onClick={()=>setShowCard(v=>!v)} aria-expanded={showCard}>{showCard?"▾ Hide Full Scorecard":"▸ View Full Scorecard"} <span>{scoredCount}/18 complete</span></button></div>
     {showCard&&<div className="scoring-card-detail">
       <div className="scoring-nine-switch"><button type="button" className={nine===0?"selected":""} onClick={()=>setNine(0)}>Front 9</button><button type="button" className={nine===1?"selected":""} onClick={()=>setNine(1)}>Back 9</button></div>
-      <div className="table-scroll"><table className="scoring-scorecard"><thead><tr><th>Hole</th>{round.holes.slice(nine*9,nine*9+9).map((_,i)=><th key={i}><button type="button" className={hole===nine*9+i?"active-hole":""} onClick={()=>jump(nine*9+i)}>{nine*9+i+1}</button></th>)}<th>{nine===0?"OUT":"IN"}</th></tr><tr><th>Par</th>{round.holes.slice(nine*9,nine*9+9).map((h,i)=><th key={i}>{h.par}</th>)}<th>{round.holes.slice(nine*9,nine*9+9).reduce((v,h)=>v+h.par,0)}</th></tr></thead><tbody>
-      {entries.map(e=><tr key={e.match+e.player}><th>{e.label}</th>{round.holes.slice(nine*9,nine*9+9).map((_,i)=>{const n=scored(e,nine*9+i);const par=round.holes[nine*9+i].par;return <td key={i}><button type="button" className={n==null?"":n<par?"under-par":n>par?"over-par":"at-par"} onClick={()=>jump(nine*9+i)}>{n??"—"}</button></td>})}<td>{round.holes.slice(nine*9,nine*9+9).reduce((v,_,i)=>v+(scored(e,nine*9+i)??0),0)||"—"}</td></tr>)}
+      <div className="table-scroll"><table className="scoring-scorecard"><thead><tr><th>Hole</th>{round.holes.slice(nine*9,nine*9+9).map((_,i)=><th key={i}><button type="button" className={hole===nine*9+i?"active-hole":""} onClick={()=>jump(nine*9+i)}>{nine*9+i+1}</button></th>)}<th>{nine===0?"OUT":"IN"}</th>{nine===1&&<th>TOTAL</th>}</tr><tr><th>Par</th>{round.holes.slice(nine*9,nine*9+9).map((h,i)=><th key={i}>{h.par}</th>)}<th>{ninePar}</th>{nine===1&&<th>{totalPar}</th>}</tr></thead><tbody>
+      {entries.map(e=><tr key={e.match+e.player}><th><span className="scorecard-team-flag">{teamFor(e)===0?"🇺🇸":"🇪🇺"}</span> {e.label}</th>{round.holes.slice(nine*9,nine*9+9).map((_,i)=>{const n=scored(e,nine*9+i);const par=round.holes[nine*9+i].par;return <td key={i}><button type="button" className={n==null?"":n<par?"under-par":n>par?"over-par":"at-par"} onClick={()=>jump(nine*9+i)}>{n??"—"}</button></td>})}<td className="scoring-nine-total">{sumRange(e,nine*9,nine*9+9)??"—"}</td>{nine===1&&<td className="scoring-grand-total">{sumRange(e,0,18)??"—"}</td>}</tr>)}
       </tbody></table></div>
       <p className="muted">Tap a hole to review or correct scores. Green = under par; outlined = over par.</p>
     </div>}

@@ -590,58 +590,25 @@ export default function App() {
                 page,
               ) && (
                 <>
-                  <section className="scoreboard">
-                    <div className="scoreboard-top">
-                      <span>
-                        <i />{" "}
-                        {totals.winner
-                          ? "TOURNAMENT RESULT"
-                          : "LIVE TOURNAMENT STANDINGS"}
-                      </span>
-                      <span>FIRST TO 9½ WINS</span>
-                    </div>
-                    <div className="score-line">
-                      <div className="team team-a">
-                        <div className="crest">
-                          {s.teams[0].name.slice(0, 1)}
-                        </div>
-                        <div>
-                          <small>TEAM A</small>
-                          <h2>{s.teams[0].name}</h2>
-                        </div>
+                  <section className="scoreboard championship-scoreboard">
+                    <div className="scoreboard-top"><span><i />{totals.winner?"TOURNAMENT RESULT":"LIVE CHAMPIONSHIP STANDINGS"}</span><span>FIRST TO 9½ WINS</span></div>
+                    <div className="championship-versus">
+                      <div className="championship-side championship-usa">
+                        <div className="championship-flag" aria-hidden="true">🇺🇸</div>
+                        <div className="championship-team-label">TEAM AMERICA</div>
+                        <div className="championship-points">{totals.official[0]}</div>
+                        <div className="championship-team-sub">UNITED STATES</div>
                       </div>
-                      <div className="points">
-                        {totals.official[0]}
-                        <span>—</span>
-                        {totals.official[1]}
-                      </div>
-                      <div className="team team-b">
-                        <div>
-                          <small>TEAM B</small>
-                          <h2>{s.teams[1].name}</h2>
-                        </div>
-                        <div className="crest">
-                          {s.teams[1].name.slice(0, 1)}
-                        </div>
+                      <div className="championship-slash" aria-label="versus">/</div>
+                      <div className="championship-side championship-europe">
+                        <div className="championship-flag" aria-hidden="true">🇪🇺</div>
+                        <div className="championship-team-label">TEAM EUROPE</div>
+                        <div className="championship-points">{totals.official[1]}</div>
+                        <div className="championship-team-sub">EUROPE</div>
                       </div>
                     </div>
-                    <div className="race">
-                      <div
-                        style={{ width: `${(totals.official[0] / 18) * 100}%` }}
-                      />
-                      <span
-                        style={{ width: `${(totals.official[1] / 18) * 100}%` }}
-                      />
-                    </div>
-                    <div className="scoreboard-bottom">
-                      <span>
-                        {totals.winner ??
-                          (totals.official[0] === totals.official[1]
-                            ? "The championship is level"
-                            : `${s.teams[totals.official[0] > totals.official[1] ? 0 : 1].name} leads the championship`)}
-                      </span>
-                      <small>{totals.remaining} POINTS STILL AVAILABLE</small>
-                    </div>
+                    <div className="championship-progress"><div style={{width:`${(totals.official[0]/18)*100}%`}}/><span style={{width:`${(totals.official[1]/18)*100}%`}}/></div>
+                    <div className="scoreboard-bottom"><span>{totals.winner??(totals.official[0]===totals.official[1]?"The championship is level":`${totals.official[0]>totals.official[1]?"America":"Europe"} leads the championship`)}</span><small>{totals.remaining} POINTS STILL AVAILABLE</small></div>
                   </section>
                   <div className="stats">
                     <div>
@@ -1805,7 +1772,7 @@ function FoursomeScoreEntry({state,round,matches,player,hole,setHole,mode,onSave
     {showCard&&<div className="scoring-card-detail">
       <div className="scoring-nine-switch"><button type="button" className={nine===0?"selected":""} onClick={()=>setNine(0)}>Front 9</button><button type="button" className={nine===1?"selected":""} onClick={()=>setNine(1)}>Back 9</button></div>
       <div className="table-scroll"><table className="scoring-scorecard"><thead><tr><th>Hole</th>{round.holes.slice(nine*9,nine*9+9).map((_,i)=><th key={i}><button type="button" className={hole===nine*9+i?"active-hole":""} onClick={()=>jump(nine*9+i)}>{nine*9+i+1}</button></th>)}<th>{nine===0?"OUT":"IN"}</th>{nine===1&&<th>TOTAL</th>}</tr><tr><th>Par</th>{round.holes.slice(nine*9,nine*9+9).map((h,i)=><th key={i}>{h.par}</th>)}<th>{ninePar}</th>{nine===1&&<th>{totalPar}</th>}</tr></thead><tbody>
-      {entries.map(e=><tr key={e.match+e.player}><th><span className="scorecard-team-flag">{teamFor(e)===0?"🇺🇸":"🇪🇺"}</span> {e.label}</th>{round.holes.slice(nine*9,nine*9+9).map((_,i)=>{const n=scored(e,nine*9+i);const par=round.holes[nine*9+i].par;return <td key={i}><button type="button" className={n==null?"":n<par?"under-par":n>par?"over-par":"at-par"} onClick={()=>jump(nine*9+i)}>{n??"—"}</button></td>})}<td className="scoring-nine-total">{sumRange(e,nine*9,nine*9+9)??"—"}</td>{nine===1&&<td className="scoring-grand-total">{sumRange(e,0,18)??"—"}</td>}</tr>)}
+      {entries.map(e=><tr className={teamFor(e)===0?"scorecard-row-usa":"scorecard-row-europe"} key={e.match+e.player}><th><span className="scorecard-team-flag">{teamFor(e)===0?"🇺🇸":"🇪🇺"}</span><span className="scorecard-player-name">{e.label}</span></th>{round.holes.slice(nine*9,nine*9+9).map((_,i)=>{const n=scored(e,nine*9+i);const par=round.holes[nine*9+i].par;return <td key={i}><button type="button" className={n==null?"":n<par?"under-par":n>par?"over-par":"at-par"} onClick={()=>jump(nine*9+i)}>{n??"—"}</button></td>})}<td className="scoring-nine-total">{sumRange(e,nine*9,nine*9+9)??"—"}</td>{nine===1&&<td className="scoring-grand-total">{sumRange(e,0,18)??"—"}</td>}</tr>)}
       </tbody></table></div>
       <p className="muted">Tap a hole to review or correct scores. Green = under par; outlined = over par.</p>
     </div>}

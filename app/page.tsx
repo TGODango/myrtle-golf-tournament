@@ -34,7 +34,8 @@ const nav = [
   "Teams",
   "Matchup Draft",
   "Tournament Results",
-  "Money & Skins",
+  "Live Skin Winners",
+  "Money Center",
   "Admin Dashboard",
 ];
 const formats = {
@@ -434,7 +435,7 @@ export default function App() {
                   setMobile(false);
                 }}
               >
-                <span>{["◈", "▥", "▤", "⚑", "▦", "♧", "⇄", "♜", "$", "⚙"][i]}</span>
+                <span>{["◈", "▥", "▤", "⚑", "▦", "♧", "⇄", "♜", "★", "$", "⚙"][i]}</span>
                 {n}
               </button>
             ))}
@@ -1177,7 +1178,8 @@ export default function App() {
                   </section>
                 </>
               )}
-              {page === "Money & Skins" && <MoneyCenter state={s} admin={admin} onSave={update} />}
+              {page === "Live Skin Winners" && <LiveSkinWinners state={s} />}
+              {page === "Money Center" && <MoneyCenter state={s} admin={admin} onSave={update} />}
               {page === "Admin Dashboard" &&
                 (admin ? (
                   <Admin
@@ -1838,11 +1840,39 @@ function Admin({
   );
 }
 
+function LiveSkinWinners({state}:{state:State}) {
+  const [selectedRound,setSelectedRound]=useState(state.rounds[0]?.id??"r0");
+  const r=state.rounds.find(item=>item.id===selectedRound)??state.rounds[0];
+  if (!r) return <section className="panel">No rounds configured.</section>;
+  const holes=liveSkins(state,r);
+  const complete=holes.filter(h=>h.status==="won"||h.status==="tied").length;
+  const winners=holes.filter(h=>h.status==="won").length;
+  return <div className="live-skins">
+    <div className="round-picker" role="group" aria-label="Choose round">
+      {state.rounds.map((item,i)=><button type="button" key={item.id} className={item.id===r.id?"selected":""} aria-pressed={item.id===r.id} onClick={()=>setSelectedRound(item.id)}>Round {i+1}<small>{item.name}</small></button>)}
+    </div>
+    <section className="panel">
+      <div className="skin-header"><div><div className="eyebrow">LIVE SKIN WINNERS</div><h2>{r.name}</h2><p>{complete} of 18 holes complete · {winners} skins won</p></div><div className="skin-progress">{Math.round(complete/18*100)}%<small>REVEALED</small></div></div>
+      <p>Winners stay hidden until all {r.format==="shamble"||r.format==="scramble"?"six teams":"12 golfers"} enter their scores for a hole. Tied low net means no skin.</p>
+      <div className="skin-hole-list">
+        {holes.map(h=><div key={h.hole} className={"skin-hole "+(h.status==="won"?"skin-hole-won":"")}>
+          <div className="skin-hole-number"><small>HOLE</small><strong>{h.hole}</strong></div>
+          <div className="skin-hole-result">
+            {h.status==="won"?<strong className="skin-winner">{h.leaders.map(id=>state.players.find(p=>p.id===id)?.name??id).join(" / ")}<span>SKIN WINNER</span></strong>:h.status==="tied"?<strong>NO SKIN — TIED</strong>:<span className="muted">WAITING FOR SCORES</span>}
+            <small>{h.entered} / {h.expected} scores entered{h.status==="won"?" · Net "+h.net:""}</small>
+          </div>
+        </div>)}
+      </div>
+    </section>
+  </div>;
+}
+
 function MoneyCenter({state,admin,onSave}:{
   state:State; admin:boolean; onSave:(next:State,message:string)=>void;
 }) {
   const settings=prizeSettings(state);
   const [draft,setDraft]=useState(settings);
+  const [selectedRound,setSelectedRound]=useState(state.rounds[0]?.id??"r0");
   useEffect(()=>setDraft(prizeSettings(state)),[state]);
   const golfers=moneyLeaderboard(state);
   const money=(n:number)=>new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"}).format(n);
@@ -1865,26 +1895,10 @@ function MoneyCenter({state,admin,onSave}:{
       {admin && <button className="primary" onClick={save}>Save prize settings & payouts</button>}
     </section>
     <section className="panel">
-      <h2>Live skins by hole</h2>
-      <p>Results stay hidden until all 12 golfers (or all six teams for Shamble and Scramble) have entered that hole. Then the board reveals SKIN WINNER or NO SKIN — TIED. Dollar payouts are calculated after the full verified round is complete.</p>
-      {state.rounds.map(r=>{
-        const holes=liveSkins(state,r);
-        return <div key={r.id} style={{marginBottom:24}}>
-          <h3>{r.name}</h3>
-          <div className="table-scroll"><table><thead><tr><th>Hole</th><th>Current leader / winner</th><th>Net</th><th>Scores in</th><th>Status</th></tr></thead><tbody>
-          {holes.map(h=><tr key={h.hole}>
-            <td>{h.hole}</td>
-            <td>{h.status==="won" ? <strong style={{color:"#16803c",fontWeight:800}}>{h.leaders.map(id=>state.players.find(p=>p.id===id)?.name??id).join(" / ")} — SKIN WINNER</strong> : h.status==="tied" ? <strong>NO SKIN — TIED</strong> : <span style={{opacity:0.65}}>WAITING FOR SCORES</span>}</td>
-            <td>{h.status==="won"||h.status==="tied"?h.net:"—"}</td>
-            <td>{h.entered} / {h.expected}</td>
-            <td>{h.status==="won"?"WINNER":h.status==="tied"?"NO SKIN":"WAITING"}</td>
-          </tr>)}
-          </tbody></table></div>
-        </div>;
-      })}
       <h2>Daily net skins</h2>
       <p>100% course handicap · all 12 compete on individual days · team skins on Shamble and Scramble · no carryovers. All 18 holes and all scores must be complete before skins are awarded.</p>
-      {state.rounds.map(r=>{
+      <div className="round-picker" role="group" aria-label="Choose payout round">{state.rounds.map((r,i)=><button type="button" key={r.id} className={selectedRound===r.id?"selected":""} aria-pressed={selectedRound===r.id} onClick={()=>setSelectedRound(r.id)}>Round {i+1}<small>{r.name}</small></button>)}</div>
+      {state.rounds.filter(r=>r.id===selectedRound).map(r=>{
         const sk=roundSkins(state,r);
         return <div key={r.id} style={{marginBottom:24}}>
           <h3>{r.name} · {r.tee || (r.id==="r2"||r.id==="r3"?"BLUE":"WHITE")} tees</h3>

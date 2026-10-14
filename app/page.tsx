@@ -22,6 +22,7 @@ import {
 } from "../lib/scoring";
 import { demo, blank } from "../lib/demo";
 import { cloud } from "../lib/cloud";
+import GolferLoginManagement from "./components/GolferLoginManagement";
 import { uploadedScorecards } from "../lib/course-scorecards";
 import { liveSkins, moneyLeaderboard, prizeSettings, roundSkins } from "../lib/money";
 const nav = [
@@ -1087,6 +1088,7 @@ export default function App() {
                     round={round}
                     setRound={setRound}
                     mode={mode}
+                    canManageLogins={mode === "cloud" && role === "admin"}
                   />
                 ) : (
                   <section className="panel">
@@ -1232,12 +1234,14 @@ function Admin({
   round,
   setRound,
   mode,
+  canManageLogins,
 }: {
   state: State;
   onSave: (s: State, message: string) => void;
   round: string;
   setRound: (s: string) => void;
   mode: string;
+  canManageLogins: boolean;
 }) {
   const [edit, setEdit] = useState(s),
     [json, setJson] = useState(""),
@@ -1251,6 +1255,7 @@ function Admin({
     });
   return (
     <div className="admin">
+      {canManageLogins && <GolferLoginManagement golfers={s.players.map(p => ({ id: p.id, name: p.name }))} />}
       <section className="panel">
         <h2>Teams & roster</h2>
         <p>

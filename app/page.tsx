@@ -64,6 +64,7 @@ export default function App() {
     [online, setOnline] = useState(true),
     [tv, setTv] = useState(false),
     [mobile, setMobile] = useState(false),
+    [showIntro, setShowIntro] = useState(false),
     [pending, setPending] = useState<
       {
         match: string;
@@ -74,6 +75,26 @@ export default function App() {
         request: string;
       }[]
     >([]);
+  useEffect(() => {
+    // Show twice per browser/device, including devices that have already logged in.
+    try {
+      const visits = Number(localStorage.getItem("dango-intro-views-v1") || "0");
+      if (visits < 2) {
+        setShowIntro(true);
+        localStorage.setItem("dango-intro-views-v1", String(visits + 1));
+      }
+    } catch {
+      setShowIntro(true);
+    }
+  }, []);
+  useEffect(() => {
+    if (!showIntro) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape" || event.key === "Enter") setShowIntro(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [showIntro]);
   function testWithLiveRoster(live: State, existing?: State): State {
     const template = demo();
     const sorted = [...live.players].sort((a,b)=>a.team-b.team);
@@ -437,6 +458,19 @@ export default function App() {
         } as React.CSSProperties
       }
     >
+      {showIntro && <div className="dango-intro" role="dialog" aria-modal="true" aria-label="DangoGolf championship welcome">
+        <div className="intro-light intro-light-left" aria-hidden="true" />
+        <div className="intro-light intro-light-right" aria-hidden="true" />
+        <div className="intro-stage">
+          <div className="intro-kicker">2026 · MYRTLE BEACH CHAMPIONSHIP</div>
+          <div className="intro-logo" aria-label="DangoGolf"><img src="/dangogolf-mark.svg" alt="DangoGolf American flag championship logo" /></div>
+          <div className="intro-teams"><span>🇺🇸 AMERICA</span><b>VS</b><span>EUROPE 🇪🇺</span></div>
+          <h1>WELCOME YOU FUCKERS<br /><em>TO MY PAGE!</em></h1>
+          <p>12 GOLFERS. 5 ROUNDS. 18 POINTS. ONE CHAMPION.</p>
+          <button type="button" className="intro-enter" onClick={() => setShowIntro(false)}>ENTER THE CHAMPIONSHIP <ChevronRight size={22}/></button>
+          <small>LET THE GAMES BEGIN</small>
+        </div>
+      </div>}
       {!tv && (
         <aside className={mobile ? "open" : ""}>
           <div className="brand">
@@ -445,7 +479,7 @@ export default function App() {
               DANGO GOLF<small>MYRTLE BEACH CHAMPIONSHIP</small>
             </div>
           </div>
-          <div className="edition">🇺🇸 USA  VS  EUROPE 🇪🇺 · 2026</div>
+          <div className="edition">🇺🇸 USA  VS  EUROPE 🇪🇺 · 2026</div><button type="button" className="intro-replay" onClick={()=>setShowIntro(true)}>▶ Replay Championship Intro</button>
           <nav>
             {nav.map((n, i) => (
               <button

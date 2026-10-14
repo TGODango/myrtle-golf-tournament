@@ -1275,8 +1275,8 @@ label select {
 .championship-match-heading span{font-weight:900;letter-spacing:.8px;font-size:12px}
 .championship-match-heading strong{color:#ffd46a;font-size:12px;letter-spacing:1.5px}
 .championship-match-grid{gap:17px}
-.championship-match-grid .championship-match{background:#fff;border:1px solid #d4dfed;border-radius:16px;overflow:hidden;box-shadow:0 8px 22px #0b295b18;padding:0;transition:transform .15s ease,box-shadow .15s ease}
-.championship-match-grid .championship-match:hover{transform:translateY(-2px);box-shadow:0 12px 24px #0b295b29}
+.championship-match{background:#fff;border:1px solid #d4dfed;border-radius:16px;overflow:hidden;box-shadow:0 8px 22px #0b295b18;padding:0;transition:transform .15s ease,box-shadow .15s ease}
+.championship-match:hover{transform:translateY(-2px);box-shadow:0 12px 24px #0b295b29}
 .championship-match-top{background:#0a244c;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:13px 17px;color:#dbe9ff;font-size:10px;font-weight:900;letter-spacing:1px}
 .match-status-badge{white-space:nowrap;border-radius:100px;padding:5px 9px;background:#274e81;color:#fff}
 .match-status-badge.match-final{background:#087b50;color:white}

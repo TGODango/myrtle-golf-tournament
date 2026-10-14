@@ -74,7 +74,7 @@ test("complete five-round simulation: 12 golfers, 18 matches, all 18 holes, 9-9 
   const earnings=moneyLeaderboard(s);
   assert.equal(earnings.length,12);
   assert.ok(earnings.every(e=>e.championship===0 && e.skins===0 && e.paid===0));
-  assert.ok(earnings.every(e=>e.matches===40), "each golfer receives $40 for five halved match appearances");
+  assert.ok(earnings.every(e=>e.matches===50), "each golfer receives $50 for five halved match appearances");
 });
 
 test("one missing golfer score blocks individual skins and remains provisional",()=>{

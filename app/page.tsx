@@ -1841,7 +1841,14 @@ function Admin({
 }
 
 function LiveSkinWinners({state}:{state:State}) {
-  const [selectedRound,setSelectedRound]=useState(state.rounds[0]?.id??"r0");
+  const [selectedRound,setSelectedRound]=useState<string|null>(null);
+  useEffect(()=>{
+    const saved=localStorage.getItem("dango-skins-selected-round");
+    const today=new Intl.DateTimeFormat("en-CA",{timeZone:"America/New_York",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
+    const current=state.rounds.find(item=>item.date===today);
+    setSelectedRound(saved && state.rounds.some(item=>item.id===saved)?saved:current?.id??state.rounds[0]?.id??"r0");
+  },[state.rounds]);
+  const chooseRound=(id:string)=>{setSelectedRound(id);localStorage.setItem("dango-skins-selected-round",id);};
   const r=state.rounds.find(item=>item.id===selectedRound)??state.rounds[0];
   if (!r) return <section className="panel">No rounds configured.</section>;
   const holes=liveSkins(state,r);
@@ -1849,7 +1856,7 @@ function LiveSkinWinners({state}:{state:State}) {
   const winners=holes.filter(h=>h.status==="won").length;
   return <div className="live-skins">
     <div className="round-picker" role="group" aria-label="Choose round">
-      {state.rounds.map((item,i)=><button type="button" key={item.id} className={item.id===r.id?"selected":""} aria-pressed={item.id===r.id} onClick={()=>setSelectedRound(item.id)}>Round {i+1}<small>{item.name}</small></button>)}
+      {state.rounds.map((item,i)=><button type="button" key={item.id} className={item.id===r.id?"selected":""} aria-pressed={item.id===r.id} onClick={()=>chooseRound(item.id)}>Round {i+1}<small>{item.name}</small></button>)}
     </div>
     <section className="panel">
       <div className="skin-header"><div><div className="eyebrow">LIVE SKIN WINNERS</div><h2>{r.name}</h2><p>{complete} of 18 holes complete · {winners} skins won</p></div><div className="skin-progress">{Math.round(complete/18*100)}%<small>REVEALED</small></div></div>

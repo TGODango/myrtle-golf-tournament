@@ -116,6 +116,13 @@ export default function App() {
     setHole(0);
     setNotice("Test tournament reset. Live data remains unchanged.");
   }
+  useEffect(() => {
+    const saved = localStorage.getItem("dango-scoring-hole:"+mode+":"+round+":"+player);
+    if (saved !== null) {
+      const n = Number(saved);
+      if (Number.isInteger(n) && n >= 0 && n < 18) setHole(n);
+    }
+  }, [mode, round, player]);
   const admin = mode === "demo" || role === "admin";
   const captain = admin || role === "captain";
   useEffect(() => {

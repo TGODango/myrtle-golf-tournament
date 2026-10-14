@@ -802,93 +802,7 @@ export default function App() {
                             </button>
                           ))}
                         </div>
-                        <div className="score-entry">
-                          <div className="eyebrow">
-                            HOLE {hole + 1} · PAR {r.holes[hole].par} · SI{" "}
-                            {r.holes[hole].rank} · {r.holes[hole].yards} YDS
-                          </div>
-                          <p>
-                            {r.format === "scramble" ? "Team scramble: 35% low + 15% high handicap. One gross score per pair." : "Course handicap"}{" "}
-                            {handicap(
-                              s.players.find((p) => p.id === player)!,
-                              r,
-                            )}{" "}
-                            · Strokes on this hole:{" "}
-                            {strokes(
-                              handicap(
-                                s.players.find((p) => p.id === player)!,
-                                r,
-                              ) -
-                                (r.format === "stableford"
-                                  ? 0
-                                  : Math.min(
-                                      ...[...mine.a, ...mine.b].map((id) =>
-                                        handicap(
-                                          s.players.find((p) => p.id === id)!,
-                                          r,
-                                        ),
-                                      ),
-                                    )),
-                              r.holes[hole].rank,
-                            )}
-                          </p>
-                          <div className="stepper">
-                            <button
-                              aria-label="Decrease gross score"
-                              onClick={() => setGross(Math.max(1, gross - 1))}
-                            >
-                              <Minus />
-                            </button>
-                            <div>
-                              {gross}
-                              <small>GROSS SCORE</small>
-                            </div>
-                            <button
-                              aria-label="Increase gross score"
-                              onClick={() => setGross(Math.min(30, gross + 1))}
-                            >
-                              <Plus />
-                            </button>
-                          </div>
-                          <p>
-                            Currently saved:{" "}
-                            {s.scores[key(mine.id, r.format === "scramble" ? (mine.a.includes(player) ? mine.a[0] : mine.b[0]) : player, hole)]?.gross ?? "—"}
-                          </p>
-                          <button className="primary" onClick={saveScore}>
-                            <Check size={18} /> Save hole {hole + 1}
-                          </button>
-                          {pending.length > 0 && (
-                            <p>
-                              {pending.length} pending score(s).{" "}
-                              <button
-                                onClick={() => {
-                                  const item = pending[0];
-                                  setPending((q) => [
-                                    {
-                                      ...item,
-                                      expected:
-                                        s.scores[
-                                          key(
-                                            item.match,
-                                            item.player,
-                                            item.hole,
-                                          )
-                                        ]?.version ?? 0,
-                                      request: crypto.randomUUID(),
-                                    },
-                                    ...q.slice(1),
-                                  ]);
-                                }}
-                              >
-                                Review saved score above, then retry my pending
-                                score
-                              </button>
-                              <button onClick={() => setPending([])}>
-                                Discard pending scores
-                              </button>
-                            </p>
-                          )}
-                        </div>
+                        <FoursomeScoreEntry state={s} round={r} matches={matches} player={player} hole={hole} setHole={setHole} mode={mode} onSaved={async(next)=>{if(mode==="demo"){setS(next);localStorage.setItem("dango-test-v1",JSON.stringify(next));}else await load();}} onNotice={setNotice}/>
                         <div className="table-scroll">
                           <table>
                             <thead>
@@ -1838,6 +1752,70 @@ function Admin({
       </section>
     </div>
   );
+}
+
+
+function FoursomeScoreEntry({state,round,matches,player,hole,setHole,mode,onSaved,onNotice}:{
+  state:State;round:State["rounds"][number];matches:Match[];player:string;hole:number;
+  setHole:(n:number)=>void;mode:"demo"|"cloud";onSaved:(next:State)=>Promise<void>;
+  onNotice:(message:string)=>void;
+}) {
+  const mine=matches.find(m=>[...m.a,...m.b].includes(player));
+  const group=mine?matches.filter(m=>m.slot===mine.slot):[];
+  const entries=group.flatMap(m=>round.format==="scramble"
+    ?[{match:m.id,player:m.a[0],label:m.a.map(id=>state.players.find(p=>p.id===id)?.name??id).join(" / ")},
+      {match:m.id,player:m.b[0],label:m.b.map(id=>state.players.find(p=>p.id===id)?.name??id).join(" / ")}]
+    :[...m.a,...m.b].map(id=>({match:m.id,player:id,label:state.players.find(p=>p.id===id)?.name??id})));
+  const [values,setValues]=useState<Record<string,number>>({});
+  const [saving,setSaving]=useState(false);
+  const [touched,setTouched]=useState(false);
+  const signature=round.id+":"+group.map(m=>m.id).join(",")+":"+hole;
+  useEffect(()=>{setValues({});setTouched(false);},[signature]);
+  const scoreFor=(e:typeof entries[number])=>values[e.match+":"+e.player]??state.scores[key(e.match,e.player,hole)]?.gross??round.holes[hole]?.par??4;
+  const change=(e:typeof entries[number],delta:number)=>{setTouched(true);setValues(v=>({...v,[e.match+":"+e.player]:Math.min(30,Math.max(1,scoreFor(e)+delta))}));};
+  async function saveAll(){
+    if(!mine||saving)return;
+    if(!round.locked||!round.verified&&mode==="cloud"||round.holes.length!==18||group.some(m=>!m.approved)){onNotice("Verified course and locked approved pairings required");return;}
+    if(!touched&&!entries.every(e=>state.scores[key(e.match,e.player,hole)])){onNotice("Review the foursome scores, then adjust or confirm before saving.");return;}
+    const batch=entries.map(e=>({match:e.match,player:e.player,hole,gross:scoreFor(e),expected:state.scores[key(e.match,e.player,hole)]?.version??0}));
+    setSaving(true);
+    try{
+      if(mode==="demo"){
+        const saved=localStorage.getItem("dango-test-v1");
+        const latest:State=saved?JSON.parse(saved):state;
+        if(batch.some(e=>(latest.scores[key(e.match,e.player,e.hole)]?.version??0)!==e.expected))throw Error("A score changed. Reload and review before saving.");
+        const scores={...latest.scores};
+        batch.forEach(e=>{scores[key(e.match,e.player,e.hole)]={gross:e.gross,version:e.expected+1};});
+        await onSaved({...latest,scores});
+      }else{
+        if(!cloud)throw Error("Not connected");
+        const {error}=await cloud.rpc("submit_foursome_scores",{p_entries:batch,p_request:crypto.randomUUID()});
+        if(error)throw error;
+        await onSaved(state);
+      }
+      onNotice("All "+entries.length+" scores saved for hole "+(hole+1));
+      if(hole<17)setHole(hole+1);
+      setTouched(false);
+    }catch(err){onNotice("Scores NOT saved: "+(err instanceof Error?err.message:String(err))+". Review and retry.");}
+    finally{setSaving(false);}
+  }
+  if(!mine)return <p>You're not assigned to a foursome for this round.</p>;
+  return <div className="foursome-entry">
+    <div className="foursome-heading"><div><div className="eyebrow">FOURSOME SCOREKEEPER</div><h2>Hole {hole+1} · Par {round.holes[hole]?.par}</h2></div><span>{round.format==="scramble"?"2 TEAM SCORES":"4 GOLFER SCORES"}</span></div>
+    <p>One golfer enters the whole group. Anyone in this foursome can take over.</p>
+    <div className="foursome-score-grid">
+      {entries.map((e,i)=><div className="foursome-player" key={e.match+":"+e.player}>
+        <div><small>{round.format==="scramble"?"TEAM "+(i+1):"GOLFER "+(i+1)}</small><strong>{e.label}</strong></div>
+        <div className="foursome-stepper">
+          <button type="button" aria-label={"Decrease score for "+e.label} onClick={()=>change(e,-1)}><Minus size={20}/></button>
+          <strong>{scoreFor(e)}</strong>
+          <button type="button" aria-label={"Increase score for "+e.label} onClick={()=>change(e,1)}><Plus size={20}/></button>
+        </div>
+      </div>)}
+    </div>
+    <button className="primary foursome-save" disabled={saving||!entries.length} onClick={saveAll}><Check size={19}/>{saving?"Saving scores…":hole===17?"Save All Scores · Finish":"Save All Scores & Next Hole"}</button>
+    <p className="muted">Scores are saved together. Corrections require reviewing the current values.</p>
+  </div>;
 }
 
 function LiveSkinWinners({state}:{state:State}) {

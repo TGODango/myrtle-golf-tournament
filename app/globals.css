@@ -1042,3 +1042,19 @@ label select {
  .live-skins .panel{padding:16px}
  .round-picker button{flex-basis:125px}
 }
+
+
+.foursome-entry{margin:20px 0;padding:20px;border-radius:14px;background:#f7faf6;border:1px solid #dce7d9}
+.foursome-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.foursome-heading h2{font-size:25px;margin:5px 0}
+.foursome-heading>span{font-size:10px;letter-spacing:1px;font-weight:800;color:#53765c}
+.foursome-score-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:18px 0}
+.foursome-player{background:white;border:1px solid #dce5dc;border-radius:12px;padding:15px;display:flex;flex-direction:column;gap:15px;min-width:0}
+.foursome-player>div:first-child{min-height:42px}
+.foursome-player small{display:block;font-size:10px;color:#8b988b;margin-bottom:5px}
+.foursome-player strong{font-size:15px;overflow-wrap:anywhere}
+.foursome-stepper{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.foursome-stepper strong{font-size:30px;font-weight:800;font-variant-numeric:tabular-nums}
+.foursome-stepper button{width:48px;height:48px;padding:0;border-radius:12px;background:#edf4ed}
+.foursome-save{width:100%;min-height:54px;border-radius:12px;font-size:15px;font-weight:800}
+@media(max-width:760px){.foursome-entry{padding:13px}.foursome-score-grid{gap:8px}.foursome-player{padding:10px}.foursome-stepper button{width:43px;height:47px}.foursome-stepper strong{font-size:26px}.foursome-heading h2{font-size:22px}}

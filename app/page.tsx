@@ -338,33 +338,23 @@ export default function App() {
       .join(" / ");
   function card(m: Match) {
     const x = result(s, m);
+    const matchRound = s.rounds.find(r=>r.id===m.round);
+    const teamNames = (ids:string[])=>ids.map(id=>s.players.find(p=>p.id===id)?.name??"Unassigned").join(" / ");
     return (
-      <article className="match" key={m.id}>
-        <div className="eyebrow">
-          {s.rounds.find((r) => r.id === m.round)?.name}{" "}
-          <span>
-            {x.complete ? "FINAL" : x.played ? `THRU ${x.played}` : "UPCOMING"}
-          </span>
+      <article className="match championship-match" key={m.id}>
+        <div className="championship-match-top">
+          <span>⛳ {matchRound?.name?.toUpperCase()??"MATCH"}</span>
+          <span className={"match-status-badge "+(x.complete?"match-final":x.played?"match-playing":"match-upcoming")}>{x.complete?"✓ FINAL":x.played?`● THRU ${x.played}`:"○ UPCOMING"}</span>
         </div>
-        <div className="versus">
-          <b>{names(m.a)}</b>
-          <small>VS</small>
-          <b>{names(m.b)}</b>
+        <div className="championship-match-versus">
+          <div className="match-team-side match-team-usa"><div className="match-team-label">🇺🇸 AMERICA</div><strong>{teamNames(m.a)}</strong></div>
+          <div className="match-versus-mark">VS</div>
+          <div className="match-team-side match-team-europe"><div className="match-team-label">🇪🇺 EUROPE</div><strong>{teamNames(m.b)}</strong></div>
         </div>
-        {s.rounds.find((r) => r.id === m.round)?.format === "stableford" && (
-          <p className="individual-points">
-            {[...m.a, ...m.b]
-              .map((id) => `${names([id])}: ${x.individual[id] ?? 0} pts`)
-              .join(" · ")}
-          </p>
-        )}
-        <div className="match-bottom">
+        {matchRound?.format==="stableford"&&<p className="individual-points">{[...m.a,...m.b].map(id=>`${names([id])}: ${x.individual[id]??0} pts`).join(" · ")}</p>}
+        <div className="championship-match-footer">
           <strong>{x.status}</strong>
-          <span>
-            {x.complete
-              ? `${x.points[0]} – ${x.points[1]} points`
-              : s.rounds.find((r) => r.id === m.round)?.times[m.slot]}
-          </span>
+          <span>{x.complete?`${x.points[0]} – ${x.points[1]} POINTS`:matchRound?.times[m.slot]??"TEE TIME TBD"}</span>
         </div>
       </article>
     );
@@ -439,7 +429,7 @@ export default function App() {
   }
   return (
     <div
-      className={(tv ? "shell tv" : "shell") + (page === "Live Scoring" ? " scoring-page" : "")}
+      className={(tv ? "shell tv" : "shell") + (page === "Live Scoring" ? " scoring-page" : "") + (["Live Leaderboard","Tournament Results"].includes(page) ? " championship-detail-page" : "")}
       style={
         {
           "--team-a": s.teams[0].color,
@@ -610,7 +600,7 @@ export default function App() {
                     <div className="championship-progress"><div style={{width:`${(totals.official[0]/18)*100}%`}}/><span style={{width:`${(totals.official[1]/18)*100}%`}}/></div>
                     <div className="scoreboard-bottom"><span>{totals.winner??(totals.official[0]===totals.official[1]?"The championship is level":`${totals.official[0]>totals.official[1]?"America":"Europe"} leads the championship`)}</span><small>{totals.remaining} POINTS STILL AVAILABLE</small></div>
                   </section>
-                  <div className="stats">
+                  <div className="stats championship-stats">
                     <div>
                       <small>MATCHES COMPLETE</small>
                       <b>
@@ -710,46 +700,30 @@ export default function App() {
               ].includes(page) && (
                 <>
                   {page === "Tournament Results" && (
-                    <section className="panel">
-                      <h2>Round-by-round results</h2>
-                      <table>
-                        <thead>
-                          <tr>
-                            <th>Round</th>
-                            <th>{s.teams[0].name}</th>
-                            <th>{s.teams[1].name}</th>
-                            <th>Completed</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {s.rounds.map((rr, i) => {
-                            const results = s.matches
-                              .filter((m) => m.round === rr.id)
-                              .map((m) => result(s, m));
-                            return (
-                              <tr key={rr.id}>
-                                <th>
-                                  {i + 1} · {rr.name}
-                                </th>
-                                <td>
-                                  {results.reduce((v, x) => v + x.points[0], 0)}
-                                </td>
-                                <td>
-                                  {results.reduce((v, x) => v + x.points[1], 0)}
-                                </td>
-                                <td>
-                                  {results.filter((x) => x.complete).length} /{" "}
-                                  {rr.format === "singles" ? 6 : 3}
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
+                    <section className="panel championship-results">
+                      <div className="championship-results-header">
+                        <div className="results-flag-side">🇺🇸 <strong>AMERICA</strong></div>
+                        <div className="results-center"><small>2026 CHAMPIONSHIP</small><h2>ROUND RESULTS</h2><span>18 MATCH POINTS · FIRST TO 9½</span></div>
+                        <div className="results-flag-side">🇪🇺 <strong>EUROPE</strong></div>
+                      </div>
+                      <div className="championship-results-list">
+                        {s.rounds.map((rr,i)=>{
+                          const roundResults=s.matches.filter(m=>m.round===rr.id).map(m=>result(s,m));
+                          const us=roundResults.reduce((v,x)=>v+x.points[0],0);
+                          const eu=roundResults.reduce((v,x)=>v+x.points[1],0);
+                          const done=roundResults.filter(x=>x.complete).length;
+                          const max=rr.format==="singles"?6:3;
+                          return <div className="championship-round-result" key={rr.id}>
+                            <div className="round-result-title"><span>ROUND {i+1}</span><strong>{rr.name}</strong><small>{done}/{max} matches final</small></div>
+                            <div className="round-result-score"><span className="round-us-score">{us}</span><span className="round-score-divider">/</span><span className="round-eu-score">{eu}</span></div>
+                            <div className="round-result-progress"><div style={{width:`${done/max*100}%`}}/></div>
+                          </div>;
+                        })}
+                      </div>
                     </section>
                   )}
                   {roundPicker()}
-                  <div className="match-grid">{matches.map(card)}</div>
+                  <div className="championship-match-heading"><span>🇺🇸 AMERICA</span><strong>ROUND MATCHUPS</strong><span>EUROPE 🇪🇺</span></div><div className="match-grid championship-match-grid">{matches.map(card)}</div>
                   {!matches.length && <p>Pairings have not been assigned.</p>}
                 </>
               )}

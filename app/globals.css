@@ -1256,3 +1256,80 @@ label select {
 .championship-results table{font-size:11px}
 .scoring-scorecard tbody tr th{min-width:125px}
 }
+
+/* Championship secondary panels: bring the lower leaderboard up to the hero's quality */
+.championship-detail-page{background:#edf2fa}
+.championship-detail-page .content{max-width:1500px}
+.championship-detail-page .stats.championship-stats{gap:14px;margin:18px 0 24px}
+.championship-stats>div{background:linear-gradient(135deg,#102f5d,#071a36);border:1px solid #315581;border-radius:15px;box-shadow:0 8px 20px #0a214329;padding:20px 23px;min-height:122px;position:relative;overflow:hidden}
+.championship-stats>div:before{content:"";position:absolute;top:0;left:0;width:5px;height:100%;background:#df3152}
+.championship-stats>div:nth-child(2):before{background:#ffd058}
+.championship-stats>div:nth-child(3):before{background:#387bdf}
+.championship-stats>div small{color:#b9d4f3;font-weight:800;letter-spacing:1px}
+.championship-stats>div b{color:white;font-size:32px}
+.championship-stats>div b span{color:#a5bedf}
+.championship-detail-page .tabs{margin:15px 0 18px;display:flex;gap:9px;flex-wrap:wrap}
+.championship-detail-page .tabs button{background:#fff;border:1px solid #c6d5e9;color:#12365f;font-weight:800;border-radius:10px;box-shadow:0 3px 9px #102c4a0b}
+.championship-detail-page .tabs button.selected{background:#0c3973;color:#fff;border-color:#0c3973;box-shadow:0 5px 14px #113d7652}
+.championship-match-heading{display:flex;align-items:center;justify-content:space-between;background:#091f41;color:white;border-radius:12px;padding:13px 19px;margin-bottom:14px;gap:10px}
+.championship-match-heading span{font-weight:900;letter-spacing:.8px;font-size:12px}
+.championship-match-heading strong{color:#ffd46a;font-size:12px;letter-spacing:1.5px}
+.championship-match-grid{gap:17px}
+.championship-match{background:#fff;border:1px solid #d4dfed;border-radius:16px;overflow:hidden;box-shadow:0 8px 22px #0b295b18;padding:0;transition:transform .15s ease,box-shadow .15s ease}
+.championship-match:hover{transform:translateY(-2px);box-shadow:0 12px 24px #0b295b29}
+.championship-match-top{background:#0a244c;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:13px 17px;color:#dbe9ff;font-size:10px;font-weight:900;letter-spacing:1px}
+.match-status-badge{white-space:nowrap;border-radius:100px;padding:5px 9px;background:#274e81;color:#fff}
+.match-status-badge.match-final{background:#087b50;color:white}
+.match-status-badge.match-playing{background:#ffd36b;color:#14294b}
+.championship-match-versus{display:grid;grid-template-columns:minmax(0,1fr) 37px minmax(0,1fr);gap:0;align-items:stretch;min-height:113px}
+.match-team-side{padding:19px 15px;min-width:0}
+.match-team-usa{background:linear-gradient(105deg,#fff1f3,#fff)}
+.match-team-europe{background:linear-gradient(255deg,#e7efff,#fff);text-align:right}
+.match-team-label{font-size:10px;font-weight:900;letter-spacing:1.2px;margin-bottom:9px;color:#b41e3d}
+.match-team-europe .match-team-label{color:#1855ad}
+.match-team-side strong{color:#0c2649;font-size:15px;line-height:1.45;display:block;overflow-wrap:anywhere}
+.match-versus-mark{display:flex;align-items:center;justify-content:center;background:#fff;color:#b28a33;font-size:13px;font-weight:900}
+.championship-match-footer{border-top:1px solid #dce5f0;padding:13px 17px;display:flex;justify-content:space-between;align-items:center;gap:8px;color:#1b3b65}
+.championship-match-footer strong{font-weight:900;color:#0b6947}
+.championship-match-footer span{font-weight:900;font-size:11px;color:#5e7290}
+.championship-match .individual-points{padding:0 15px;color:#506581}
+.championship-detail-page .championship-results{padding:0;background:#fff;border:1px solid #d4e0ef;border-radius:18px;overflow:hidden;box-shadow:0 8px 25px #0b295b1a;margin-bottom:22px}
+.championship-results-header{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr) minmax(0,1fr);align-items:center;gap:10px;background:linear-gradient(110deg,#081d40,#123c7b 50%,#071b42);color:white;padding:25px 20px;text-align:center}
+.results-flag-side{display:flex;flex-direction:column;gap:8px;font-size:38px;align-items:center}
+.results-flag-side strong{font-size:14px;letter-spacing:1.5px;color:#fff}
+.results-center small{color:#ffda74;letter-spacing:1.6px;font-weight:900}
+.results-center h2{font-size:25px;font-weight:900;color:white;margin:8px 0}
+.results-center span{font-size:10px;letter-spacing:1px;color:#b8d1f0}
+.championship-results-list{padding:16px;display:grid;gap:11px}
+.championship-round-result{display:grid;grid-template-columns:minmax(0,1fr) 165px;align-items:center;gap:8px 16px;background:#f4f7fc;border:1px solid #d9e3f1;border-radius:12px;padding:15px 18px}
+.round-result-title{display:flex;flex-direction:column;gap:4px}
+.round-result-title span{color:#376ca7;font-size:10px;font-weight:900;letter-spacing:1px}
+.round-result-title strong{color:#102c55;font-size:17px}
+.round-result-title small{color:#667d99;font-size:11px;font-weight:700}
+.round-result-score{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:31px;font-weight:900}
+.round-us-score{color:#c32445}
+.round-eu-score{color:#145ac0}
+.round-score-divider{color:#9baac0;font-weight:400}
+.round-result-progress{grid-column:1/-1;height:5px;background:#dce5f0;border-radius:6px;overflow:hidden}
+.round-result-progress div{height:100%;background:#087d52}
+@media(max-width:760px){
+.championship-detail-page .content{padding:13px}
+.championship-stats>div{padding:13px;min-height:95px}
+.championship-stats>div b{font-size:24px}
+.championship-match-heading{padding:12px 10px}
+.championship-match-heading span{font-size:10px}
+.championship-match-heading strong{font-size:10px;text-align:center}
+.championship-match-top{padding:11px}
+.match-team-side{padding:14px 10px}
+.match-team-side strong{font-size:13px}
+.match-team-label{font-size:9px}
+.championship-match-footer{padding:11px}
+.championship-results-header{padding:18px 9px}
+.results-flag-side{font-size:29px}
+.results-flag-side strong{font-size:10px}
+.results-center h2{font-size:16px}
+.results-center span{font-size:8px}
+.championship-round-result{grid-template-columns:minmax(0,1fr) 92px;padding:11px}
+.round-result-title strong{font-size:14px}
+.round-result-score{font-size:24px}
+}

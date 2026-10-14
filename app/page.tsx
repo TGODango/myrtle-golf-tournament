@@ -477,7 +477,7 @@ export default function App() {
             <img src="/dangogolf-approved.webp" alt="DangoGolf" />
             <small>MYRTLE BEACH CHAMPIONSHIP</small>
           </div>
-          <div className="edition">🇺🇸 USA  VS  EUROPE 🇪🇺 · 2026</div><button type="button" className="intro-replay" onClick={()=>setShowIntro(true)}>▶ Replay Championship Intro</button>
+          
           <nav>
             {nav.map((n, i) => (
               <button
@@ -493,11 +493,7 @@ export default function App() {
               </button>
             ))}
           </nav>
-          <div className="sidebar-footer">
-            <div className="avatar">MB</div>
-            <b>Five rounds. One champion.</b>
-            <small>Myrtle Beach, South Carolina</small>
-          </div>
+          <div className="sidebar-replay-bottom"><button type="button" className="intro-replay" onClick={()=>setShowIntro(true)}>▶ Replay Championship Intro</button></div>
         </aside>
       )}
       <main>
@@ -583,9 +579,6 @@ export default function App() {
             <>
               <div className="page-title">
                 <div>
-                  <div className="eyebrow">
-                    OCTOBER TRADITION. CHAMPIONSHIP AMBITION.
-                  </div>
                   <h1>{page === "Home" ? "The road to 9½." : page}</h1>
                   <p>
                     Myrtle Beach Golf Championship 2026 <span>•</span> 12
@@ -1059,10 +1052,7 @@ export default function App() {
                 ))}
             </>
           )}
-          <footer>
-            <Flag size={16} /> MYRTLE BEACH 2026{" "}
-            <span>Good golf. Great company. A little friendly rivalry.</span>
-          </footer>
+
         </div>
       </main>
     </div>

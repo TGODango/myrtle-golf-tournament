@@ -1368,3 +1368,7 @@ label select {
 .shell:not(.tv) aside .dango-brand img{width:100%;max-width:218px;height:auto;object-fit:contain;display:block;filter:drop-shadow(0 3px 5px #0006)}
 .shell:not(.tv) aside .dango-brand small{font-size:9px;letter-spacing:1.3px;text-align:center;color:#c6dcf7}
 .intro-logo img{image-rendering:auto;filter:drop-shadow(0 5px 12px #0009)}
+
+/* Keep the replay action unobtrusive and below all sidebar navigation */
+.shell:not(.tv) aside .sidebar-replay-bottom{margin-top:auto;padding-top:24px;padding-bottom:5px;flex-shrink:0}
+.shell:not(.tv) aside .sidebar-replay-bottom .intro-replay{margin:0;width:100%;font-size:10px;letter-spacing:0;white-space:normal;min-height:42px}

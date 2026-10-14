@@ -1962,14 +1962,25 @@ function MatchLeaderboardScorecard({state,match,round}: {state:State;match:Match
             const scores=round.holes.slice(seg.start,seg.end).map((_,i)=>state.scores[key(match.id,e.id,seg.start+i)]?.gross);
             const entered=scores.filter((v):v is number=>v!==undefined);
             return <tr key={e.id}><th scope="row" style={{textAlign:"left",whiteSpace:"nowrap",paddingRight:8}}>{e.label}</th>
-              {scores.map((v,i)=><td key={i}>{v??"—"}</td>)}
+              {scores.map((v,i)=>{
+                const par=round.holes[seg.start+i].par;
+                const diff=v===undefined?null:v-par;
+                const label=diff===null?"Not entered":diff<=-2?"Eagle or better":diff===-1?"Birdie":diff===0?"Par":diff===1?"Bogey":"Double bogey or worse";
+                const circle=diff!==null&&diff<0;
+                const square=diff!==null&&diff>0;
+                const double=diff!==null&&Math.abs(diff)>=2;
+                return <td key={i}><span title={label} aria-label={v===undefined?"Not entered":`${v} strokes, ${label}`}
+                  style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:28,height:28,boxSizing:"border-box",borderRadius:circle?"50%":0,border:circle||square?(double?"4px double currentColor":"2px solid currentColor"):"2px solid transparent",fontWeight:600}}>
+                  {v??"—"}
+                </span></td>;
+              })}
               <td><strong>{entered.length?entered.reduce((a,b)=>a+b,0):"—"}</strong></td>
             </tr>;
           })}
         </tbody>
       </table>
     </div>)}
-    <p style={{fontSize:12,marginTop:10}}>Scores are gross strokes by hole. — means not entered.</p>
+    <p style={{fontSize:12,marginTop:10}}>Gross scores: circled birdie, double-circled eagle or better, squared bogey, double-squared double bogey or worse. — means not entered.</p>
   </div>;
 }
 

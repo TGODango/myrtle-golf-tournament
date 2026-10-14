@@ -415,7 +415,7 @@ export default function App() {
   }
   return (
     <div
-      className={tv ? "shell tv" : "shell"}
+      className={(tv ? "shell tv" : "shell") + (page === "Live Scoring" ? " scoring-page" : "")}
       style={
         {
           "--team-a": s.teams[0].color,
@@ -428,10 +428,10 @@ export default function App() {
           <div className="brand">
             <Flag size={28} />
             <div>
-              MYRTLE BEACH<small>GOLF CHAMPIONSHIP</small>
+              DANGO GOLF<small>MYRTLE BEACH CHAMPIONSHIP</small>
             </div>
           </div>
-          <div className="edition">THE 2026 EDITION</div>
+          <div className="edition">🇺🇸 USA  VS  EUROPE 🇪🇺 · 2026</div>
           <nav>
             {nav.map((n, i) => (
               <button

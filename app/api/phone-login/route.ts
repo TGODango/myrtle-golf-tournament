@@ -61,6 +61,13 @@ export async function POST(req: NextRequest) {
   });
   if (verifyError || !verified.session || verified.user?.id !== record.user_id)
     return NextResponse.json({ error: "Could not start session." }, { status: 503 });
+  // Record successful phone sign-ins only. Never store tournament codes or tokens.
+  // Login must still succeed if activity logging is temporarily unavailable.
+  try {
+    await db.from("golfer_login_activity").upsert({
+      player_id: record.player_id, phone, last_login_at: new Date().toISOString(),
+    }, { onConflict: "player_id" });
+  } catch { /* Noncritical audit logging */ }
   return NextResponse.json({
     access_token: verified.session.access_token,
     refresh_token: verified.session.refresh_token,

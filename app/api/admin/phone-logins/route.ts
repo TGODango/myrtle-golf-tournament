@@ -28,7 +28,10 @@ export async function GET(req: NextRequest) {
   if (ctx.error) return ctx.error;
   const { data, error } = await ctx.db!.from("phone_logins").select("player_id,phone").order("player_id");
   if (error) return reply({ error: "Could not load golfer phone numbers." }, 500);
-  return reply({ logins: data || [], codeType: "shared" });
+  const { data: activity, error: activityError } = await ctx.db!.from("golfer_login_activity")
+    .select("player_id,last_login_at").order("last_login_at", { ascending: false });
+  if (activityError) return reply({ error: "Could not load golfer login activity." }, 500);
+  return reply({ logins: data || [], activity: activity || [], codeType: "shared" });
 }
 
 export async function PATCH(req: NextRequest) {

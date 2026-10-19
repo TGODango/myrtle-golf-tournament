@@ -20,7 +20,7 @@ import {
   handicap,
   strokes,
 } from "../lib/scoring";
-import { demo, blank } from "../lib/demo";
+import { blank } from "../lib/demo";
 import { cloud } from "../lib/cloud";
 import GolferLoginManagement from "./components/GolferLoginManagement";
 import { uploadedScorecards } from "../lib/course-scorecards";
@@ -49,7 +49,6 @@ const formats = {
 export default function App() {
   const [s, setS] = useState<State>(blank()),
     [page, setPage] = useState("Live Scoring"),
-    [mode, setMode] = useState<"demo" | "cloud">("cloud"),
     [round, setRound] = useState("r0"),
     [player, setPlayer] = useState("p0"),
     [hole, setHole] = useState(0),
@@ -97,105 +96,24 @@ export default function App() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [showIntro]);
-  function testWithLiveRoster(live: State, existing?: State): State {
-    const template = demo();
-    const sorted = [...live.players].sort((a,b)=>a.team-b.team);
-    if (sorted.length !== 12 || sorted.filter(p=>p.team===0).length !== 6 || sorted.filter(p=>p.team===1).length !== 6) return template;
-    const players = template.players.map((p,i)=>({
-      ...p, name:sorted[i].name, index:sorted[i].index,
-      team:sorted[i].team, captain:sorted[i].captain,
-      overrides:{...sorted[i].overrides},
-    }));
-    const old = existing && existing.players.length===12 ? existing : template;
-    return {
-      ...template,
-      players,
-      teams:[{name:"America",color:"#c62b47"},{name:"Europe",color:"#2b69d0"}],
-      rounds:template.rounds.map((r,i)=>({
-        ...r,
-        // Use the live course details where available; demo scores remain local only.
-        holes:live.rounds[i]?.holes.length===18?live.rounds[i].holes:r.holes,
-        rating:live.rounds[i]?.rating||r.rating,
-        slope:live.rounds[i]?.slope||r.slope,
-        tee:live.rounds[i]?.tee||r.tee,
-      })),
-      scores:old.scores,
-      audit:old.audit,
-    };
-  }
-  function enterTestMode() {
-    if (!user) { setNotice("Sign in before opening Test Mode"); return; }
-    let saved:State|undefined;
-    try { const raw=localStorage.getItem("dango-test-v1"); saved=raw?JSON.parse(raw):undefined; } catch {}
-    const testState=testWithLiveRoster(s,saved);
-    localStorage.setItem("dango-test-v1",JSON.stringify(testState));
-    setS(testState);
-    setPlayer("p0");
-    setRound("r0");
-    setHole(0);
-    setPage("Live Scoring");
-    setMode("demo");
-    setNotice("TEST MODE: Real roster and teams, simulated local-only scores. LIVE tournament scores are untouched.");
-  }
-  async function exitTestMode() {
-    setMode("cloud");
-    setPage("Live Scoring");
-    setRound("r0");
-    setHole(0);
-    setNotice("Returning to live tournament…");
-    if (!cloud) return;
-    const { data, error } = await cloud.rpc("read_tournament");
-    if (error) { setNotice("Live tournament could not load: " + error.message); return; }
-    if (data) { setS(data.state); setRev(data.revision); }
-    const { data: session } = await cloud.auth.getUser();
-    if (session.user) {
-      const { data: member } = await cloud.from("members").select("player_id,role").eq("user_id", session.user.id).single();
-      if (member) { setPlayer(member.player_id); setRole(member.role); }
-    }
-    setNotice("LIVE TOURNAMENT: Your real tournament data is loaded.");
-  }
-  function resetTestMode() {
-    if (!window.confirm("Reset all TEST scores and fictional pairings? Your LIVE tournament will not be affected.")) return;
-    localStorage.removeItem("dango-test-v1");
-    setS(demo());
-    setPlayer("p0");
-    setRound("r0");
-    setHole(0);
-    setNotice("Test tournament reset. Live data remains unchanged.");
-  }
   useEffect(() => {
-    const saved = localStorage.getItem("dango-scoring-hole:"+mode+":"+round+":"+player);
+    const saved = localStorage.getItem("dango-scoring-hole:cloud:"+round+":"+player);
     if (saved !== null) {
       const n = Number(saved);
       if (Number.isInteger(n) && n >= 0 && n < 18) setHole(n);
     }
-  }, [mode, round, player]);
-  const admin = mode === "demo" || role === "admin";
+  }, [round, player]);
+  const admin = role === "admin";
   const captain = admin || role === "captain";
   useEffect(() => {
-    const saved = localStorage.getItem("dango-test-v1");
-    if (saved)
-      try {
-        setS(JSON.parse(saved));
-      } catch {}
-    const receive = (e: StorageEvent) => {
-      if (e.key === "dango-test-v1" && e.newValue)
-        setS(JSON.parse(e.newValue));
-    };
-    window.addEventListener("storage", receive);
     const change = () => setOnline(navigator.onLine);
     window.addEventListener("online", change);
     window.addEventListener("offline", change);
     return () => {
-      window.removeEventListener("storage", receive);
       window.removeEventListener("online", change);
       window.removeEventListener("offline", change);
     };
   }, []);
-  useEffect(() => {
-    if (mode === "demo")
-      localStorage.setItem("dango-test-v1", JSON.stringify(s));
-  }, [s, mode]);
   useEffect(() => {
     const saved = localStorage.getItem("myrtle-score-queue");
     if (saved)
@@ -219,7 +137,7 @@ export default function App() {
     }
   }
   useEffect(() => {
-    if (mode !== "cloud" || !cloud) return;
+    if (!cloud) return;
     const client = cloud;
     client.auth.getUser().then(async ({ data }) => {
       if (data.user) {
@@ -266,7 +184,7 @@ export default function App() {
       client.removeChannel(channel);
       auth.subscription.unsubscribe();
     };
-  }, [mode]);
+  }, []);
   async function send(item: (typeof pending)[number]) {
     if (!cloud) return false;
     const { error } = await cloud.rpc("submit_score", {
@@ -292,7 +210,7 @@ export default function App() {
     return true;
   }
   useEffect(() => {
-    if (mode !== "cloud" || !online || !user || !pending.length) return;
+    if (!online || !user || !pending.length) return;
     let cancelled = false;
     (async () => {
       const item = pending[0];
@@ -302,17 +220,12 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [mode, online, user, pending.length, pending[0]?.request]);
+  }, [online, user, pending.length, pending[0]?.request]);
   async function update(next: State, message: string) {
     next = {
       ...next,
       audit: [{ at: new Date().toISOString(), message }, ...next.audit],
     };
-    if (mode === "demo") {
-      setS(next);
-      setNotice("Saved in demo");
-      return;
-    }
     if (!cloud || !admin) {
       setNotice("Administrator access required");
       return;
@@ -430,7 +343,7 @@ export default function App() {
       !r.locked ||
       !mine.approved ||
       r.holes.length !== 18 ||
-      (mode === "cloud" && !r.verified)
+      !r.verified
     ) {
       setNotice(
         "Approved, locked pairings and a verified 18-hole scorecard are required",
@@ -440,26 +353,6 @@ export default function App() {
     const scoringPlayer = r.format === "scramble" ? (mine.a.includes(player) ? mine.a[0] : mine.b[0]) : player;
     const k = key(mine.id, scoringPlayer, hole),
       expected = s.scores[k]?.version ?? 0;
-    if (mode === "demo") {
-      const latest = JSON.parse(
-        localStorage.getItem("dango-test-v1") ?? JSON.stringify(s),
-      );
-      if ((latest.scores[k]?.version ?? 0) !== expected) {
-        setS(latest);
-        setNotice(
-          "Conflict: score changed on another tab. Review it before saving.",
-        );
-        return;
-      }
-      await update(
-        {
-          ...s,
-          scores: { ...s.scores, [k]: { gross, version: expected + 1 } },
-        },
-        `${names([player])}: hole ${hole + 1} → ${gross}`,
-      );
-      if (hole < 17) { setHole(hole + 1); setGross(r.holes[hole + 1].par); }
-    } else {
       setPending((q) => [
         ...q,
         {
@@ -472,7 +365,6 @@ export default function App() {
         },
       ]);
       setNotice("Score queued securely for synchronization");
-    }
   }
   function roundPicker() {
     return (
@@ -549,28 +441,21 @@ export default function App() {
             MYRTLE BEACH <span className="muted">/ {page}</span>
           </span>
           <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-            {user && (mode === "cloud"
-              ? <button type="button" onClick={enterTestMode} style={{padding:"7px 12px",border:"1px solid #d5b56a",borderRadius:8,fontWeight:700}}>🧪 Enter Test Mode</button>
-              : <>
-                  <button type="button" onClick={resetTestMode} style={{padding:"7px 12px",border:"1px solid #d5b56a",borderRadius:8}}>Reset Test</button>
-                  <button type="button" onClick={exitTestMode} style={{padding:"7px 12px",border:"1px solid #d5b56a",borderRadius:8,fontWeight:700}}>Return to LIVE</button>
-                </>)}
             <span className="connection">
               <i />
-              {mode === "demo" ? "DEMO MODE" : online ? "CONNECTED" : "OFFLINE"}
+              {online ? "CONNECTED" : "OFFLINE"}
             </span>
 
           </div>
         </header>
         <div className="content">
-          {mode === "demo" && <div role="status" style={{padding:12,marginBottom:16,border:"2px solid #d5b56a",borderRadius:8,fontWeight:700}}>🧪 TEST MODE — Real golfer names and teams, simulated scores saved ONLY on this device. NOT THE LIVE TOURNAMENT.</div>}
           {notice && (
             <div className="notice" role="status">
               {notice}
               <button onClick={() => setNotice("")}>×</button>
             </div>
           )}
-          {mode === "cloud" && !user ? (
+          {!user ? (
             <section className="panel">
               <h1>Your championship starts here.</h1>
               <p>Enter your registered phone number and tournament code.</p>
@@ -800,7 +685,7 @@ export default function App() {
                 <>
                   {roundPicker()}
                   <section className="panel">
-                    {mode === "demo" || admin ? (
+                    {admin ? (
                       <label>
                         Scoring as{" "}
                         <select
@@ -823,7 +708,7 @@ export default function App() {
                           <h2>{r.name}</h2>
                           <span>{result(s, mine).status}</span>
                         </div>
-                        <FoursomeScoreEntry state={s} round={r} matches={matches} player={player} hole={hole} setHole={setHole} mode={mode} onSaved={async(next)=>{if(mode==="demo"){setS(next);localStorage.setItem("dango-test-v1",JSON.stringify(next));}else await load();}} onNotice={setNotice}/>
+                        <FoursomeScoreEntry state={s} round={r} matches={matches} player={player} hole={hole} setHole={setHole} onSaved={async()=>{await load();}} onNotice={setNotice}/>
                       </>
                     ) : (
                       <p>Your match or course scorecard is not ready yet.</p>
@@ -980,7 +865,7 @@ export default function App() {
                               m,
                             ],
                           };
-                          if (mode === "demo" || admin)
+                          if (admin)
                             update(next, "Pairing draft saved");
                           else
                             cloud!
@@ -1087,8 +972,7 @@ export default function App() {
                     onSave={update}
                     round={round}
                     setRound={setRound}
-                    mode={mode}
-                    canManageLogins={mode === "cloud" && role === "admin"}
+                    canManageLogins={role === "admin"}
                   />
                 ) : (
                   <section className="panel">
@@ -1233,14 +1117,12 @@ function Admin({
   onSave,
   round,
   setRound,
-  mode,
   canManageLogins,
 }: {
   state: State;
   onSave: (s: State, message: string) => void;
   round: string;
   setRound: (s: string) => void;
-  mode: string;
   canManageLogins: boolean;
 }) {
   const [edit, setEdit] = useState(s),
@@ -1731,20 +1613,16 @@ function Admin({
             <span>{x.message}</span>
           </div>
         ))}
-        {mode === "demo" && (
-          <button onClick={() => onSave(demo(), "Demo reset")}>
-            Reset demonstration
-          </button>
-        )}
+
       </section>
     </div>
   );
 }
 
 
-function FoursomeScoreEntry({state,round,matches,player,hole,setHole,mode,onSaved,onNotice}:{
+function FoursomeScoreEntry({state,round,matches,player,hole,setHole,onSaved,onNotice}:{
   state:State;round:State["rounds"][number];matches:Match[];player:string;hole:number;
-  setHole:(n:number)=>void;mode:"demo"|"cloud";onSaved:(next:State)=>Promise<void>;
+  setHole:(n:number)=>void;onSaved:(next:State)=>Promise<void>;
   onNotice:(message:string)=>void;
 }) {
   const mine=matches.find(m=>[...m.a,...m.b].includes(player));
@@ -1762,31 +1640,22 @@ function FoursomeScoreEntry({state,round,matches,player,hole,setHole,mode,onSave
   const change=(e:typeof entries[number],delta:number)=>{setValues(v=>({...v,[e.match+":"+e.player]:Math.min(30,Math.max(1,scoreFor(e)+delta))}));};
   async function saveAll(){
     if(!mine||saving)return;
-    if(!round.locked||!round.verified&&mode==="cloud"||round.holes.length!==18||group.some(m=>!m.approved)){onNotice("Verified course and locked approved pairings required");return;}
+    if(!round.locked||!round.verified||round.holes.length!==18||group.some(m=>!m.approved)){onNotice("Verified course and locked approved pairings required");return;}
     const batch=entries.map(e=>({match:e.match,player:e.player,hole,gross:scoreFor(e),expected:state.scores[key(e.match,e.player,hole)]?.version??0}));
     setSaving(true);
     try{
-      if(mode==="demo"){
-        const saved=localStorage.getItem("dango-test-v1");
-        const latest:State=saved?JSON.parse(saved):state;
-        if(batch.some(e=>(latest.scores[key(e.match,e.player,e.hole)]?.version??0)!==e.expected))throw Error("A score changed. Reload and review before saving.");
-        const scores={...latest.scores};
-        batch.forEach(e=>{scores[key(e.match,e.player,e.hole)]={gross:e.gross,version:e.expected+1};});
-        await onSaved({...latest,scores});
-      }else{
-        if(!cloud)throw Error("Not connected");
-        const {error}=await cloud.rpc("submit_foursome_scores",{p_entries:batch,p_request:crypto.randomUUID()});
-        if(error)throw error;
-        await onSaved(state);
-      }
+      if(!cloud)throw Error("Not connected");
+      const {error}=await cloud.rpc("submit_foursome_scores",{p_entries:batch,p_request:crypto.randomUUID()});
+      if(error)throw error;
+      await onSaved(state);
       onNotice("All "+entries.length+" scores saved for hole "+(hole+1));
-      if(hole<17){setHole(hole+1);localStorage.setItem("dango-scoring-hole:"+mode+":"+round.id+":"+player,String(hole+1));}
+      if(hole<17){setHole(hole+1);localStorage.setItem("dango-scoring-hole:cloud:"+round.id+":"+player,String(hole+1));}
 
     }catch(err){onNotice("Scores NOT saved: "+(err && typeof err==="object" && "message" in err ? String(err.message) : err instanceof Error ? err.message : typeof err==="string" ? err : JSON.stringify(err))+(err && typeof err==="object" && "code" in err ? " (code: "+String(err.code)+")" : "")+". Review and retry.");}
     finally{setSaving(false);}
   }
   if(!mine)return <p>You're not assigned to a foursome for this round.</p>;
-  const jump=(n:number)=>{const next=Math.max(0,Math.min(17,n));setHole(next);localStorage.setItem("dango-scoring-hole:"+mode+":"+round.id+":"+player,String(next));};
+  const jump=(n:number)=>{const next=Math.max(0,Math.min(17,n));setHole(next);localStorage.setItem("dango-scoring-hole:cloud:"+round.id+":"+player,String(next));};
   const scored=(e:typeof entries[number],i:number)=>state.scores[key(e.match,e.player,i)]?.gross;
   const scoredCount=Array.from({length:18},(_,i)=>entries.length>0&&entries.every(e=>scored(e,i)!=null)).filter(Boolean).length;
   const [nine,setNine]=useState(0);

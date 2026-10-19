@@ -708,7 +708,7 @@ export default function App() {
                           <h2>{r.name}</h2>
                           <span>{result(s, mine).status}</span>
                         </div>
-                        <FoursomeScoreEntry state={s} round={r} matches={matches} player={player} hole={hole} setHole={setHole} mode={mode} onSaved={async(next)=>{if(mode==="demo"){setS(next);localStorage.setItem("dango-test-v1",JSON.stringify(next));}else await load();}} onNotice={setNotice}/>
+                        <FoursomeScoreEntry state={s} round={r} matches={matches} player={player} hole={hole} setHole={setHole} onSaved={async()=>{await load();}} onNotice={setNotice}/>
                       </>
                     ) : (
                       <p>Your match or course scorecard is not ready yet.</p>
@@ -1655,7 +1655,7 @@ function FoursomeScoreEntry({state,round,matches,player,hole,setHole,onSaved,onN
     finally{setSaving(false);}
   }
   if(!mine)return <p>You're not assigned to a foursome for this round.</p>;
-  const jump=(n:number)=>{const next=Math.max(0,Math.min(17,n));setHole(next);localStorage.setItem("dango-scoring-hole:"+mode+":"+round.id+":"+player,String(next));};
+  const jump=(n:number)=>{const next=Math.max(0,Math.min(17,n));setHole(next);localStorage.setItem("dango-scoring-hole:cloud:"+round.id+":"+player,String(next));};
   const scored=(e:typeof entries[number],i:number)=>state.scores[key(e.match,e.player,i)]?.gross;
   const scoredCount=Array.from({length:18},(_,i)=>entries.length>0&&entries.every(e=>scored(e,i)!=null)).filter(Boolean).length;
   const [nine,setNine]=useState(0);

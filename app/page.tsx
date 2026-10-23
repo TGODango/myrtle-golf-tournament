@@ -23,6 +23,7 @@ import {
 import { blank } from "../lib/demo";
 import { cloud } from "../lib/cloud";
 import GolferLoginManagement from "./components/GolferLoginManagement";
+import LodgingDirections from "./components/LodgingDirections";
 import { uploadedScorecards } from "../lib/course-scorecards";
 import { liveSkins, moneyLeaderboard, prizeSettings, roundSkins } from "../lib/money";
 const nav = [
@@ -31,6 +32,7 @@ const nav = [
   "Live Skin Winners",
   "Today's Matches",
   "Schedule",
+  "Lodging & Directions",
   "Course Scorecards",
   "Teams",
   "Matchup Draft",
@@ -424,7 +426,7 @@ export default function App() {
                   setMobile(false);
                 }}
               >
-                <span className={i % 3 === 0 ? "nav-icon-gold" : "nav-icon-white"}>{["✎", "▥", "★", "⚑", "▦", "♧", "⇄", "♜", "🏆", "$", "⌂", "⚙"][i]}</span>
+                <span className={i % 3 === 0 ? "nav-icon-gold" : "nav-icon-white"}>{["✎", "▥", "★", "⚑", "▦", "⌂", "♧", "⇄", "♜", "🏆", "$", "⌂", "⚙"][i]}</span>
                 {n}
               </button>
             ))}
@@ -737,6 +739,7 @@ export default function App() {
                   ))}
                 </div>
               )}
+              {page === "Lodging & Directions" && <LodgingDirections rounds={s.rounds} />}
               {page === "Schedule" && (
                 <div className="schedule">
                   {s.rounds.map((x, i) => (

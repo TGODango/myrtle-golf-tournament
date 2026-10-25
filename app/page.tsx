@@ -24,6 +24,7 @@ import { blank } from "../lib/demo";
 import { cloud } from "../lib/cloud";
 import GolferLoginManagement from "./components/GolferLoginManagement";
 import LodgingDirections from "./components/LodgingDirections";
+import TripCountdown from "./components/TripCountdown";
 import { uploadedScorecards } from "../lib/course-scorecards";
 import { liveSkins, moneyLeaderboard, prizeSettings, roundSkins } from "../lib/money";
 const nav = [
@@ -443,6 +444,7 @@ export default function App() {
             MYRTLE BEACH <span className="muted">/ {page}</span>
           </span>
           <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+            <TripCountdown compact />
             <span className="connection">
               <i />
               {online ? "CONNECTED" : "OFFLINE"}
@@ -584,6 +586,7 @@ export default function App() {
               )}
               {page === "Home" && (
                 <>
+                  <TripCountdown />
                   <div className="section-heading">
                     <h2>On the course</h2>
                     <button onClick={() => setPage("Today's Matches")}>

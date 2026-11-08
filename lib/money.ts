@@ -67,9 +67,13 @@ export function roundSkins(s: State, r: Round): RoundSkins {
   if (!complete) return {round:r.id,complete:false,mode,skins:[],pot,skinValue:0,unawarded:pot};
   const skins: Skin[] = [];
   for (let hole=0;hole<18;hole++) {
-    const contenders = matches.flatMap(m => mode === "team"
+    const appearances = matches.flatMap(m => mode === "team"
       ? [m.a,m.b].map(ids => ({ids,net:score(s,m,ids,hole,r)!}))
       : [...m.a,...m.b].map(id => ({ids:[id],net:score(s,m,[id],hole,r)!})));
+    // A golfer assigned to two matches is one skins contender, not two.
+    const contenders = mode === "individual"
+      ? appearances.filter((c,i) => appearances.findIndex(other => other.ids[0] === c.ids[0]) === i)
+      : appearances;
     const best = Math.min(...contenders.map(c=>c.net));
     const winners = contenders.filter(c=>c.net===best);
     if (winners.length===1) skins.push({hole:hole+1,winners:winners[0].ids,net:best,amount:0});
@@ -125,12 +129,15 @@ export type LiveSkinHole = {
 export function liveSkins(s: State, r: Round): LiveSkinHole[] {
   const mode = r.format === "shamble" || r.format === "scramble" ? "team" : "individual";
   const matches = matchEntries(s, r);
-  const expected = mode === "team" ? 6 : 12;
+  const expected = mode === "team" ? 6 : new Set(matches.flatMap(m => [...m.a,...m.b])).size;
   return Array.from({length:18},(_,i)=>{
-    const contenders = matches.flatMap(m => (mode === "team"
+    const appearances = matches.flatMap(m => (mode === "team"
       ? [m.a,m.b]
       : [...m.a,...m.b].map(id=>[id]))
       .map(ids=>({ids,net: r.holes.length===18 ? score(s,m,ids,i,r) : null})));
+    const contenders = mode === "individual"
+      ? appearances.filter((c,index) => appearances.findIndex(other => other.ids[0] === c.ids[0]) === index)
+      : appearances;
     const submitted = contenders.filter((x):x is {ids:string[];net:number}=>x.net!==null);
     if (!submitted.length) return {hole:i+1,status:"waiting" as const,leaders:[],net:null,entered:0,expected};
     const best=Math.min(...submitted.map(x=>x.net));

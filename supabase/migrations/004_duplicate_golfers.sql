@@ -1,5 +1,10 @@
--- Allow one golfer to fill multiple match positions while keeping score records synchronized.
-create or replace function public.update_tournament(p_state jsonb,p_expected bigint) returns void language plpgsql security definer set search_path=public as $$
+-- Preserve current deployed function behavior while permitting duplicate match assignments.
+CREATE OR REPLACE FUNCTION public.update_tournament(p_state jsonb, p_expected bigint)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
 declare t tournaments; r jsonb; m jsonb; p jsonb; used text[]; ids text[]; pid text; size integer; slot integer; team integer;
 begin
  if not exists(select 1 from members where user_id=auth.uid() and role='admin') then raise exception 'Administrator required';end if;
@@ -10,7 +15,7 @@ begin
  if (select count(distinct x->>'id') from jsonb_array_elements(p_state->'players') x)<>jsonb_array_length(p_state->'players') then raise exception 'Duplicate player IDs';end if;
  if (select count(distinct x->>'id') from jsonb_array_elements(p_state->'matches') x)<>jsonb_array_length(p_state->'matches') then raise exception 'Duplicate match IDs';end if;
  for r in select * from jsonb_array_elements(p_state->'rounds') loop
-  if (r->>'format') not in ('bestball','stableford','shamble','singles') then raise exception 'Invalid scoring format';end if;
+  if (r->>'format') not in ('bestball','stableford','shamble','scramble','singles') then raise exception 'Invalid scoring format';end if;
   if coalesce((r->>'verified')::boolean,false) then
    if jsonb_array_length(r->'holes')<>18 or (r->>'slope')::numeric<55 or (r->>'slope')::numeric>155 or (r->>'rating')::numeric<=0 then raise exception 'Invalid verified scorecard';end if;
    if (select count(distinct (x->>'rank')::int) from jsonb_array_elements(r->'holes') x)<>18 or exists(select 1 from jsonb_array_elements(r->'holes') x where (x->>'rank')::int not between 1 and 18 or (x->>'par')::int not between 3 and 6 or (x->>'yards')::numeric<=0) then raise exception 'Invalid hole data';end if;
@@ -39,9 +44,15 @@ begin
 
  insert into audit(actor,action,before_value,after_value) values(auth.uid(),'administration',t.state,p_state);
  update tournaments set state=p_state,revision=revision+1 where id=1;
-end $$;
+end $function$
+;
 
-create or replace function public.save_draft(p_match jsonb) returns void language plpgsql security definer set search_path=public as $$
+CREATE OR REPLACE FUNCTION public.save_draft(p_match jsonb)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
 declare t tournaments; member members; r jsonb; old jsonb; p jsonb; team integer; side text; opp text; size integer; others jsonb; player_key text;
 begin
  select * into member from members where user_id=auth.uid();
@@ -72,10 +83,15 @@ begin
  select coalesce(jsonb_agg(x),'[]') into others from jsonb_array_elements(t.state->'matches') x where x->>'id'<>p_match->>'id';
  insert into audit(actor,action,before_value,after_value) values(auth.uid(),'draft',old,p_match);
  update tournaments set state=jsonb_set(t.state,array['matches'],others||jsonb_build_array(p_match)),revision=revision+1 where id=1;
-end $$;
+end $function$
+;
 
-create or replace function public.submit_foursome_scores(p_entries jsonb,p_request uuid)
-returns void language plpgsql security definer set search_path=public as $$
+CREATE OR REPLACE FUNCTION public.submit_foursome_scores(p_entries jsonb, p_request uuid)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
 declare t tournaments; member members; prior score_requests; e jsonb; m jsonb; r jsonb; k text; old jsonb; seen text[]:=array[]::text[]; slot_id integer; round_id text; expected_count integer; match_count integer; other_match jsonb; mirror_key text; mirror_old jsonb;
 begin
  select * into member from members where user_id=auth.uid();
@@ -102,7 +118,7 @@ begin
   if not ((m->'a') ? (e->>'player') or (m->'b') ? (e->>'player')) then raise exception 'Player not in match'; end if;
   if r->>'format'='scramble' and e->>'player'<>m->'a'->>0 and e->>'player'<>m->'b'->>0 then raise exception 'Invalid scramble team'; end if;
   if (e->>'hole')::integer not between 0 and 17 or (e->>'gross')::integer not between 1 and 30 or (e->>'hole')::integer<>(p_entries->0->>'hole')::integer then raise exception 'Invalid score or hole'; end if;
-  k:=e->>'match'||':'||e->>'player'||':'||e->>'hole';
+  k:=concat(e->>'match',':',e->>'player',':',e->>'hole');
   if k=any(seen) then raise exception 'Duplicate score'; end if;
   seen:=array_append(seen,k); old:=t.state->'scores'->k;
   if coalesce((old->>'version')::integer,0)<>(e->>'expected')::integer then raise exception 'Score changed; reload and review'; end if;
@@ -114,11 +130,9 @@ begin
   end loop;
  end loop;
  for e in select value from jsonb_array_elements(p_entries) loop
-  k:=e->>'match'||':'||e->>'player'||':'||e->>'hole'; old:=t.state->'scores'->k;
+  k:=concat(e->>'match',':',e->>'player',':',e->>'hole'); old:=t.state->'scores'->k;
   insert into audit(actor,action,before_value,after_value) values(auth.uid(),'foursome score '||k,old,e);
   t.state:=jsonb_set(t.state,array['scores',k],jsonb_build_object('gross',(e->>'gross')::integer,'version',(e->>'expected')::integer+1));
-  -- Mirror the same physical golfer's score into other matches in this round.
-  -- The golfer remains one participant in individual skins.
   for other_match in select x from jsonb_array_elements(t.state->'matches') x
     where x->>'round'=round_id and x->>'id'<>e->>'match'
       and ((x->'a') ? (e->>'player') or (x->'b') ? (e->>'player')) loop
@@ -132,4 +146,5 @@ begin
  insert into score_requests(request_id,user_id,payload) values(p_request,auth.uid(),p_entries);
  t.state:=jsonb_set(t.state,array['audit'],jsonb_build_array(jsonb_build_object('at',now(),'message','Foursome scores saved for '||round_id||' hole '||(p_entries->0->>'hole')))||coalesce(t.state->'audit','[]'));
  update tournaments set state=t.state,revision=revision+1 where id=1;
-end $$;
+end $function$
+;

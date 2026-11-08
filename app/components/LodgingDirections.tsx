@@ -71,6 +71,13 @@ export default function LodgingDirections({ rounds }: { rounds: State["rounds"] 
         </section>
       ))}
       <section className="panel">
+        <div className="eyebrow">ON-SITE PUB · TURNBERRY PARK</div>
+        <h2>🍻 The Ailsa Pub</h2>
+        <p><strong>4601 Arran Ct, Myrtle Beach, SC 29579</strong></p>
+        <p>Located among the Legends villas. Open daily from 4 PM. Choose your house above or use your current location for walking or driving directions.</p>
+        <MapsLinks destination="The Ailsa Pub, 4601 Arran Ct, Myrtle Beach, SC 29579" origin={originAddress} />
+      </section>
+      <section className="panel">
         <h2>⛳ Golf course directions</h2>
         <p>Navigate to any of the five tournament rounds.</p>
       </section>

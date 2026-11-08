@@ -140,7 +140,7 @@ begin
   for other_match in select x from jsonb_array_elements(t.state->'matches') x
     where x->>'round'=round_id and x->>'id'<>e->>'match'
       and ((x->'a') ? (e->>'player') or (x->'b') ? (e->>'player')) loop
-    mirror_key:=other_match->>'id'||':'||e->>'player'||':'||e->>'hole';
+    mirror_key:=concat(other_match->>'id',':',e->>'player',':',e->>'hole');
     mirror_old:=t.state->'scores'->mirror_key;
     t.state:=jsonb_set(t.state,array['scores',mirror_key],
       jsonb_build_object('gross',(e->>'gross')::integer,

@@ -1131,6 +1131,21 @@ function Admin({
   setRound: (s: string) => void;
   canManageLogins: boolean;
 }) {
+  const [resetting, setResetting] = useState(false);
+  const resetRound = async () => {
+    const selected = s.rounds.find(x => x.id === round);
+    if (!selected || resetting || !cloud) return;
+    if (!window.confirm("RESET ALL SCORES for " + selected.name + "? This removes all entered holes for every match in this round and recalculates skins and standings. Pairings remain unchanged. This cannot be undone.")) return;
+    setResetting(true);
+    try {
+      const { data, error } = await cloud.rpc("reset_round_scores", { p_round: round });
+      if (error) throw error;
+      window.alert("Round reset: " + data + " score entries removed. Reload the page to see the cleared scorecards.");
+      window.location.reload();
+    } catch (err) {
+      window.alert("Round NOT reset: " + (err instanceof Error ? err.message : String(err)));
+    } finally { setResetting(false); }
+  };
   const [edit, setEdit] = useState(s),
     [json, setJson] = useState(""),
     [error, setError] = useState("");
@@ -1319,6 +1334,11 @@ function Admin({
       </section>
       <section className="panel">
         <h2>Rounds, verified scorecards & tee times</h2>
+        <div style={{margin:"12px 0",padding:12,border:"1px solid #b44",borderRadius:8}}>
+          <strong>Reset entire round</strong>
+          <p>Clear all entered scores for the selected round, including duplicate-golfer entries. Pairings, handicaps, and other rounds stay intact. Skins and standings recalculate automatically.</p>
+          <button type="button" disabled={resetting} onClick={resetRound}>{resetting ? "Resetting…" : "Reset all scores for selected round"}</button>
+        </div>
         <select value={round} onChange={(e) => setRound(e.target.value)}>
           {edit.rounds.map((x) => (
             <option key={x.id} value={x.id}>

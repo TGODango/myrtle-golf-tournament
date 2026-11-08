@@ -59,3 +59,39 @@ export async function PATCH(req: NextRequest) {
   if (updateError || !updated) return reply({ error: updateError?.code === "23505" ? "That phone number is already in use." : "Could not save the phone number." }, 409);
   return reply({ phone: updated.phone });
 }
+
+export async function POST(req: NextRequest) {
+  const ctx = await adminClient(req);
+  if (ctx.error) return ctx.error;
+  let body: unknown;
+  try { body = await req.json(); } catch { return reply({ error: "Invalid request." }, 400); }
+  if (!body || typeof body !== "object") return reply({ error: "Invalid request." }, 400);
+  const { playerId, phone: rawPhone } = body as { playerId?: unknown; phone?: unknown };
+  if (typeof playerId !== "string" || typeof rawPhone !== "string") return reply({ error: "Invalid golfer or phone." }, 400);
+  const phone = rawPhone.replace(/\D/g, "");
+  if (!/^\d{10}$/.test(phone)) return reply({ error: "Enter a valid 10-digit US phone number." }, 400);
+  const db = ctx.db!;
+  const { data: tournament, error: tournamentError } = await db.from("tournaments").select("state").eq("id", 1).single();
+  if (tournamentError || !tournament?.state?.players?.some((p: {id: string}) => p.id === playerId))
+    return reply({ error: "Golfer not found." }, 404);
+  const { data: existing } = await db.from("phone_logins").select("player_id").eq("player_id", playerId).maybeSingle();
+  if (existing) return reply({ error: "Golfer already has a login." }, 409);
+  const { data: conflict } = await db.from("phone_logins").select("player_id").eq("phone", phone).maybeSingle();
+  if (conflict) return reply({ error: "Phone already registered to another golfer." }, 409);
+  const email = "golfer-" + playerId + "@login.dangogolf.com";
+  const { data: created, error: createError } = await db.auth.admin.createUser({ email, email_confirm: true });
+  if (createError || !created.user) return reply({ error: createError?.message || "Could not create golfer login." }, 500);
+  const userId = created.user.id;
+  const { error: memberError } = await db.from("members").insert({ user_id: userId, player_id: playerId, role: "golfer" });
+  if (memberError) {
+    await db.auth.admin.deleteUser(userId);
+    return reply({ error: "Could not link golfer membership: " + memberError.message }, 500);
+  }
+  const { error: loginError } = await db.from("phone_logins").insert({ user_id: userId, player_id: playerId, phone });
+  if (loginError) {
+    await db.from("members").delete().eq("user_id", userId);
+    await db.auth.admin.deleteUser(userId);
+    return reply({ error: "Could not register phone: " + loginError.message }, 500);
+  }
+  return reply({ phone }, 201);
+}

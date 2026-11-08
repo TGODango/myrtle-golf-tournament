@@ -51,3 +51,24 @@ test("scramble uses one gross team score per hole", () => {
   }
   assert.equal(result(s,m).complete,true);
 });
+
+test("a golfer appearing in two matches is one individual skins contender", () => {
+  const s=demo(),r=s.rounds[0];
+  r.verified=true;
+  const matches=s.matches.filter(m=>m.round===r.id);
+  const repeated=matches[0].a[0];
+  const absent=matches[1].a[0];
+  matches[1].a[0]=repeated;
+  s.players.forEach(p=>{p.index=0;p.overrides[r.id]=0;});
+  for(const m of matches)
+    for(const id of [...m.a,...m.b])
+      for(let h=0;h<18;h++)
+        s.scores[key(m.id,id,h)]={gross:r.holes[h].par+1,version:1};
+  for(const m of matches.filter(m=>m.a.includes(repeated)))
+    s.scores[key(m.id,repeated,0)]={gross:r.holes[0].par-1,version:1};
+  const skins=roundSkins(s,r);
+  assert.equal(skins.complete,true);
+  assert.equal(skins.skins.length,1);
+  assert.deepEqual(skins.skins[0].winners,[repeated]);
+  assert.ok(!skins.skins.some(skin=>skin.winners.includes(absent)));
+});

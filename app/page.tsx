@@ -902,7 +902,7 @@ export default function App() {
                             !r.locked &&
                             (matches.length !==
                               (r.format === "singles" ? 6 : 3) ||
-                              new Set(assigned).size !== 12 ||
+                              assigned.length !== 12 ||
                               s.players.length !== 12 ||
                               s.teams.some(
                                 (_, i) =>
@@ -937,7 +937,7 @@ export default function App() {
                               ))
                           ) {
                             setNotice(
-                              "Require 12 unique golfers, six per team, one captain per team, and all matches complete",
+                              "Require 12 match positions, six rostered golfers per team, one captain per team, and complete matches",
                             );
                             return;
                           }

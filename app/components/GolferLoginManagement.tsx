@@ -13,7 +13,7 @@ export default function GolferLoginManagement({ golfers }: { golfers: Golfer[] }
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState("");
-  async function request(method: "GET" | "PATCH", body?: object) {
+  async function request(method: "GET" | "PATCH" | "POST", body?: object) {
     if (!cloud) throw new Error("Cloud connection unavailable.");
     const { data, error } = await cloud.auth.getSession();
     if (error || !data.session) throw new Error("Sign in again to manage logins.");
@@ -50,6 +50,18 @@ export default function GolferLoginManagement({ golfers }: { golfers: Golfer[] }
       setMessage(e instanceof Error ? e.message : "Unable to save phone number.");
     } finally { setSaving(""); }
   }
+  async function create(playerId: string) {
+    setSaving(playerId);
+    setMessage("");
+    try {
+      const data = await request("POST", { playerId, phone: edits[playerId] || "" });
+      setLogins(prev => [...prev, { player_id: playerId, phone: data.phone }]);
+      setEdits(prev => ({ ...prev, [playerId]: data.phone }));
+      setMessage("New golfer login created. They can now sign in with their phone and the tournament code.");
+    } catch (e) {
+      setMessage(e instanceof Error ? e.message : "Could not create login.");
+    } finally { setSaving(""); }
+  }
   return (
     <section className="panel">
       <h2>Golfer Login Management</h2>
@@ -69,7 +81,7 @@ export default function GolferLoginManagement({ golfers }: { golfers: Golfer[] }
             <button type="button" disabled={!changed || !!saving} onClick={() => save(g.id)}>
               {saving === g.id ? "Saving…" : "Save phone"}
             </button>
-          </> : <span>No linked phone login — account setup required</span>}
+          </> : <><input type="tel" inputMode="tel" placeholder="10-digit phone" aria-label={g.name + " new login phone"} value={edits[g.id] ?? ""} onChange={e => setEdits(prev => ({ ...prev, [g.id]: e.target.value }))} maxLength={18} style={{width:190}} /><button type="button" disabled={!!saving} onClick={() => create(g.id)}>{saving === g.id ? "Creating…" : "Create login"}</button></>}
           <span style={{ fontSize: 13, opacity: 0.8 }}>
             {lastLogin ? "Last signed in: " + new Date(lastLogin).toLocaleString("en-US", { timeZone: "America/New_York", dateStyle: "short", timeStyle: "short" }) + " ET" : "No recorded sign-in yet"}
           </span>

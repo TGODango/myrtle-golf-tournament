@@ -32,6 +32,10 @@ begin
    used:=array[]::text[];
    for m in select x from jsonb_array_elements(p_state->'matches') x where x->>'round'=r->>'id' loop
     if jsonb_array_length(m->'a')<>size or jsonb_array_length(m->'b')<>size or not coalesce((m->>'approved')::boolean,false) then raise exception 'Invalid approved pairing';end if;
+    if (select count(distinct x) from jsonb_array_elements_text(m->'a') x)<>size
+      or (select count(distinct x) from jsonb_array_elements_text(m->'b') x)<>size
+      or exists(select 1 from jsonb_array_elements_text(m->'a') x where m->'b' ? x)
+      then raise exception 'Duplicate golfer within match'; end if;
     for team in 0..1 loop
      for pid in select jsonb_array_elements_text(case when team=0 then m->'a' else m->'b' end) loop
       if not exists(select 1 from jsonb_array_elements(p_state->'players') x where x->>'id'=pid and (x->>'team')::int=team) then raise exception 'Wrong-team player';end if;

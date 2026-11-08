@@ -781,8 +781,7 @@ export default function App() {
                     <section className="panel" key={i}>
                       <div className="eyebrow">
                         TEAM {i === 0 ? "A" : "B"} ·{" "}
-                        {s.players.filter((p) => p.team === i).length} / 6
-                        GOLFERS
+                        {s.players.filter((p) => p.team === i).length} GOLFERS
                       </div>
                       <h2 style={{ color: t.color }}>{t.name}</h2>
                       {s.players
@@ -903,11 +902,11 @@ export default function App() {
                             (matches.length !==
                               (r.format === "singles" ? 6 : 3) ||
                               assigned.length !== 12 ||
-                              s.players.length !== 12 ||
+                              s.players.length < 12 ||
                               s.teams.some(
                                 (_, i) =>
                                   s.players.filter((p) => p.team === i)
-                                    .length !== 6 ||
+                                     .length < 6 ||
                                   s.players.filter(
                                     (p) => p.team === i && p.captain,
                                   ).length !== 1,
@@ -1162,7 +1161,7 @@ function Admin({
       <section className="panel">
         <h2>Teams & roster</h2>
         <p>
-          Enter six golfers per team and choose one captain each. Course
+          Keep at least six golfers per team and choose one captain each. Substitutes can be added without removing returning golfers. Course
           handicap overrides use the round ID (r0–r4).
         </p>
         {edit.teams.map((t, i) => (
@@ -1304,7 +1303,7 @@ function Admin({
         ))}
         <button
           onClick={() =>
-            edit.players.length < 12 &&
+            edit.players.length < 24 &&
             setEdit({
               ...edit,
               players: [

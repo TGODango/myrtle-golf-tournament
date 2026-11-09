@@ -78,6 +78,13 @@ export default function LodgingDirections({ rounds }: { rounds: State["rounds"] 
         <MapsLinks destination="The Ailsa Pub, 4601 Arran Ct, Myrtle Beach, SC 29579" origin={originAddress} />
       </section>
       <section className="panel">
+        <div className="eyebrow">MAIN CLUBHOUSE · HEATHLAND, MOORLAND & PARKLAND</div>
+        <h2>🏌️ Legends Main Clubhouse</h2>
+        <p><strong>1500 Legends Dr, Myrtle Beach, SC 29579</strong></p>
+        <p>Pro shop, check-in, and Highlander's Double Eagle Tavern. Choose your house above or use your current location for walking or driving directions.</p>
+        <MapsLinks destination="Legends Golf Resort Main Clubhouse, 1500 Legends Dr, Myrtle Beach, SC 29579" origin={originAddress} />
+      </section>
+      <section className="panel">
         <h2>⛳ Golf course directions</h2>
         <p>Navigate to any of the five tournament rounds.</p>
       </section>

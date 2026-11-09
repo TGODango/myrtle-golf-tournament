@@ -260,13 +260,18 @@ export default function App() {
   const roundDates = s.rounds.map((x) => x.date).join(",");
   useEffect(() => {
     if (page === "Home" || page === "Live Scoring") {
-      const today = s.rounds.filter((x) => x.date === localDate);
-      if (today.length) {
-        const upcoming = today.find((x) => x.times.some((t) => t >= localTime));
-        setRound((upcoming ?? today[today.length - 1]).id);
+      const active = s.rounds.find((x) => x.id === s.activeRoundId);
+      if (active) {
+        setRound(active.id);
+      } else {
+        const today = s.rounds.filter((x) => x.date === localDate);
+        if (today.length) {
+          const upcoming = today.find((x) => x.times.some((t) => t >= localTime));
+          setRound((upcoming ?? today[today.length - 1]).id);
+        }
       }
     }
-  }, [page, roundDates, localDate]);
+  }, [page, roundDates, localDate, s.activeRoundId]);
   const totals = standings(s),
     r = s.rounds.find((x) => x.id === round) ?? s.rounds[0],
     matches = s.matches.filter((m) => m.round === r.id),
@@ -1329,6 +1334,21 @@ function Admin({
           onClick={() => onSave(edit, "Roster and team settings updated")}
         >
           Save roster
+        </button>
+      </section>
+      <section className="panel">
+        <h2>Active scoring round</h2>
+        <p>Everyone opens this round by default in Live Scoring. Earlier scores, skins, and match results remain saved and accessible.</p>
+        <p><strong>Currently active: {s.rounds.find(x => x.id === s.activeRoundId)?.name ?? "Automatic by date"}</strong></p>
+        <button type="button" className="primary" disabled={!s.rounds.some((x,i) => x.id === s.activeRoundId && i < s.rounds.length - 1)}
+          onClick={() => {
+            const index = s.rounds.findIndex(x => x.id === s.activeRoundId);
+            const next = s.rounds[index + 1];
+            if (!next || !window.confirm("Advance Live Scoring to " + next.name + " for everyone? Existing scores will be preserved.")) return;
+            onSave({ ...s, activeRoundId: next.id }, "Active scoring round advanced to " + next.name);
+            setRound(next.id);
+          }}>
+          Advance to next round
         </button>
       </section>
       <section className="panel">

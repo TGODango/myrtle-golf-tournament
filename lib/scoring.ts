@@ -38,6 +38,7 @@ export type Match = {
 };
 export type Score = { gross: number; version: number };
 export type State = {
+  activeRoundId?: string;
   players: Player[];
   rounds: Round[];
   matches: Match[];

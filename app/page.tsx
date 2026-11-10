@@ -320,9 +320,20 @@ export default function App() {
               <div className="match-team-side match-team-europe"><div className="match-team-label">🇪🇺 EUROPE</div><strong>{teamNames(m.b)}</strong><small style={{display:"block",marginTop:6,opacity:.85,fontSize:12}}>{matchPops(m.b)}</small></div>
             </div>
             {matchRound?.format === "stableford" && (
-              <p className="individual-points" style={{margin:"8px 12px"}}>
-                {[...m.a,...m.b].map(id => `${names([id])}: ${x.individual[id] ?? 0} pts`).join(" | ")}
-              </p>
+              <div style={{padding:12,margin:"8px 10px",border:"1px solid #cbd5e1",borderRadius:10}}>
+                <div style={{fontSize:12,fontWeight:800,marginBottom:8}}>LIVE STABLEFORD POINTS · THRU {x.played}</div>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+                  {([m.a,m.b] as string[][]).map((ids,side)=><div key={side}>
+                    <div style={{fontSize:12,fontWeight:800,marginBottom:6}}>{side===0?"🇺🇸 AMERICA":"🇪🇺 EUROPE"}</div>
+                    {ids.map(id=><div key={id} style={{display:"flex",justifyContent:"space-between",gap:6,marginBottom:4,fontSize:13}}>
+                      <span>{names([id])}</span><strong>{x.individual[id] ?? 0} pts</strong>
+                    </div>)}
+                    <div style={{borderTop:"1px solid #cbd5e1",paddingTop:7,marginTop:8,display:"flex",justifyContent:"space-between",alignItems:"center",fontWeight:900}}>
+                      <span>TEAM TOTAL</span><span style={{fontSize:25}}>{x.totals[side]}</span>
+                    </div>
+                  </div>)}
+                </div>
+              </div>
             )}
             <div className="championship-match-footer">
               <strong>{matchRound?.format === "stableford" ? `${x.totals[0]} – ${x.totals[1]} pts` : x.status}</strong>
@@ -705,7 +716,20 @@ export default function App() {
                     </section>
                   )}
                   {roundPicker()}
-                  <div className="championship-match-heading"><span>🇺🇸 AMERICA</span><strong>ROUND MATCHUPS</strong><span>EUROPE 🇪🇺</span></div><div className="match-grid championship-match-grid">{matches.map(card)}</div>
+                  {page === "Live Leaderboard" && r.format === "stableford" && (
+                     <section className="panel" style={{marginBottom:14}}>
+                       <h2>🏆 Live Stableford Team Totals</h2>
+                       <p>Combined points across all matchups, from completed holes.</p>
+                       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,textAlign:"center"}}>
+                         {[0,1].map(side=><div key={side} style={{padding:12,border:"1px solid #cbd5e1",borderRadius:10}}>
+                           <strong>{side===0?"🇺🇸 AMERICA":"🇪🇺 EUROPE"}</strong>
+                           <div style={{fontSize:38,fontWeight:900}}>{matches.reduce((total,m)=>total+result(s,m).totals[side],0)}</div>
+                           <small>Stableford points</small>
+                         </div>)}
+                       </div>
+                     </section>
+                   )}
+                   <div className="championship-match-heading"><span>🇺🇸 AMERICA</span><strong>ROUND MATCHUPS</strong><span>EUROPE 🇪🇺</span></div><div className="match-grid championship-match-grid">{matches.map(card)}</div>
                   {!matches.length && <p>Pairings have not been assigned.</p>}
                 </>
               )}

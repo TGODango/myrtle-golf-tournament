@@ -109,9 +109,24 @@ export function result(s: State, m: Match) {
     played = 0,
     totals = [0, 0],
     individual: Record<string, number> = {};
+  // Stableford running points count every posted golfer score, even when
+  // teammates or opponents have not yet posted the same hole.
+  if (r.format === "stableford") {
+    for (let n = 0; n < 18; n++) {
+      const allPosted = ids.every(id => s.scores[key(m.id,id,n)] !== undefined);
+      if (allPosted) played++;
+      for (const id of ids) {
+        const entry = s.scores[key(m.id,id,n)];
+        if (!entry) continue;
+        const pts = stableford(entry.gross,r.holes[n].par,strokes(h[id],r.holes[n].rank));
+        individual[id] = (individual[id] ?? 0) + pts;
+        totals[m.a.includes(id) ? 0 : 1] += pts;
+      }
+    }
+  }
   let decided = false;
   let final = "";
-  for (let n = 0; n < 18; n++) {
+  for (let n = 0; n < 18 && r.format !== "stableford"; n++) {
     if (r.format === "scramble" ? ![m.a[0],m.b[0]].every(id => s.scores[key(m.id,id,n)]) : !ids.every(id => s.scores[key(m.id,id,n)])) break;
     if (r.format === "scramble") {
       const a = s.scores[key(m.id,m.a[0],n)].gross - strokes(scrambleHandicap(m.a)-lowScramble,r.holes[n].rank);

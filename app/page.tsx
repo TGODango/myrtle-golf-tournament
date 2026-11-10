@@ -1887,6 +1887,18 @@ function MatchLeaderboardScorecard({state,match,round}: {state:State;match:Match
     ?[{id:match.a[0],label:match.a.map(id=>state.players.find(p=>p.id===id)?.name??id).join(" / ")},
       {id:match.b[0],label:match.b.map(id=>state.players.find(p=>p.id===id)?.name??id).join(" / ")}]
     :[...match.a,...match.b].map(id=>({id,label:state.players.find(p=>p.id===id)?.name??id}));
+  const playerHandicaps=[...match.a,...match.b].map(id=>handicap(state.players.find(p=>p.id===id)!,round));
+  const lowestHandicap=Math.min(...playerHandicaps);
+  const scrambleAllowance=(ids:string[])=>{
+    const values=ids.map(id=>handicap(state.players.find(p=>p.id===id)!,round)).sort((a,b)=>a-b);
+    return Math.round(0.35*values[0]+0.15*values[1]);
+  };
+  const lowestScramble=round.format==="scramble"?Math.min(scrambleAllowance(match.a),scrambleAllowance(match.b)):0;
+  const allowance=(id:string)=>{
+    if(round.format==="scramble")return scrambleAllowance(match.a.includes(id)?match.a:match.b)-lowestScramble;
+    const golfer=state.players.find(p=>p.id===id);
+    return golfer?handicap(golfer,round)-(round.format==="stableford"?0:lowestHandicap):0;
+  };
   const segments=[{start:0,end:9,label:"OUT"},{start:9,end:18,label:"IN"}];
   return <div style={{padding:"12px 14px",borderTop:"1px solid #d9dfe9"}}>
     <strong>{round.name} · Match scorecard</strong>
@@ -1906,12 +1918,13 @@ function MatchLeaderboardScorecard({state,match,round}: {state:State;match:Match
                 const circle=diff!==null&&diff<0;
                 const square=diff!==null&&diff>0;
                 const double=diff!==null&&Math.abs(diff)>=2;
-                return <td key={i}><span title={label} aria-label={v===undefined?"Not entered":`${v} strokes, ${label}`}
+                const pops=Math.max(0,strokes(allowance(e.id),round.holes[seg.start+i].rank));
+                return <td key={i}><div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:1}}><span title={label} aria-label={v===undefined?"Not entered":`${v} strokes, ${label}`}
                   style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:32,height:32,boxSizing:"border-box",borderRadius:circle?"50%":0,border:double?"2px solid currentColor":"2px solid transparent",fontWeight:600}}>
                   <span aria-hidden="true" style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:double?23:26,height:double?23:26,boxSizing:"border-box",borderRadius:circle?"50%":0,border:circle||square?"2px solid currentColor":"2px solid transparent"}}>
                     {v??"—"}
                   </span>
-                </span></td>;
+                </span><span aria-label={`${pops} handicap strokes on hole ${seg.start+i+1}`} title={`${pops} handicap strokes`} style={{fontSize:13,lineHeight:"13px",fontWeight:900,minHeight:13,letterSpacing:1}}>{pops>0?"●".repeat(pops):"\u00a0"}</span></div></td>;
               })}
               <td><strong>{entered.length?entered.reduce((a,b)=>a+b,0):"—"}</strong></td>
             </tr>;
@@ -1919,7 +1932,7 @@ function MatchLeaderboardScorecard({state,match,round}: {state:State;match:Match
         </tbody>
       </table>
     </div>)}
-    <p style={{fontSize:12,marginTop:10}}>Gross scores: circled birdie, double-circled eagle or better, squared bogey, double-squared double bogey or worse. — means not entered.</p>
+    <p style={{fontSize:12,marginTop:10}}>Dots under each score show handicap strokes received on that hole (● = 1, ●● = 2). Gross scores: circled birdie, double-circled eagle or better, squared bogey, double-squared double bogey or worse. — means not entered.</p>
   </div>;
 }
 

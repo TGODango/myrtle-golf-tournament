@@ -285,6 +285,24 @@ export default function App() {
     const matchRound = s.rounds.find(r => r.id === m.round);
     const onLeaderboard = page === "Live Leaderboard";
     const expanded = onLeaderboard && expandedLeaderboardMatch === m.id;
+    const matchPops = (ids: string[]) => {
+      if (!matchRound) return "";
+      const all = [...m.a, ...m.b];
+      const courseHandicaps = all.map(id => handicap(s.players.find(p => p.id === id)!, matchRound));
+      if (matchRound.format === "scramble") {
+        const teamAllowance = (team: string[]) => {
+          const values = team.map(id => handicap(s.players.find(p => p.id === id)!, matchRound)).sort((a,b) => a-b);
+          return Math.round(0.35 * values[0] + 0.15 * values[1]);
+        };
+        const base = Math.min(teamAllowance(m.a), teamAllowance(m.b));
+        return "Team pops: " + (teamAllowance(ids) - base);
+      }
+      const base = matchRound.format === "stableford" ? 0 : Math.min(...courseHandicaps);
+      return ids.map(id => {
+        const golfer = s.players.find(p => p.id === id);
+        return (golfer?.name ?? "Unassigned") + ": " + (golfer ? handicap(golfer, matchRound) - base : 0) + " pops";
+      }).join(" · ");
+    };
     const teamNames = (ids: string[]) => ids.map(id => s.players.find(p => p.id === id)?.name ?? "Unassigned").join(" / ");
     return (
       <article className="match championship-match" key={m.id}>
@@ -297,9 +315,9 @@ export default function App() {
             onClick={() => setExpandedLeaderboardMatch(expanded ? null : m.id)}
             style={{display:"block",width:"100%",border:0,background:"transparent",padding:0,textAlign:"inherit",cursor:"pointer",color:"inherit"}}>
             <div className="championship-match-versus">
-              <div className="match-team-side match-team-usa"><div className="match-team-label">🇺🇸 AMERICA</div><strong>{teamNames(m.a)}</strong></div>
+              <div className="match-team-side match-team-usa"><div className="match-team-label">🇺🇸 AMERICA</div><strong>{teamNames(m.a)}</strong><small style={{display:"block",marginTop:6,opacity:.85,fontSize:12}}>{matchPops(m.a)}</small></div>
               <div className="match-versus-mark">VS</div>
-              <div className="match-team-side match-team-europe"><div className="match-team-label">🇪🇺 EUROPE</div><strong>{teamNames(m.b)}</strong></div>
+              <div className="match-team-side match-team-europe"><div className="match-team-label">🇪🇺 EUROPE</div><strong>{teamNames(m.b)}</strong><small style={{display:"block",marginTop:6,opacity:.85,fontSize:12}}>{matchPops(m.b)}</small></div>
             </div>
             {matchRound?.format === "stableford" && (
               <p className="individual-points" style={{margin:"8px 12px"}}>
@@ -314,9 +332,9 @@ export default function App() {
         ) : (
           <>
             <div className="championship-match-versus">
-              <div className="match-team-side match-team-usa"><div className="match-team-label">🇺🇸 AMERICA</div><strong>{teamNames(m.a)}</strong></div>
+              <div className="match-team-side match-team-usa"><div className="match-team-label">🇺🇸 AMERICA</div><strong>{teamNames(m.a)}</strong><small style={{display:"block",marginTop:6,opacity:.85,fontSize:12}}>{matchPops(m.a)}</small></div>
               <div className="match-versus-mark">VS</div>
-              <div className="match-team-side match-team-europe"><div className="match-team-label">🇪🇺 EUROPE</div><strong>{teamNames(m.b)}</strong></div>
+              <div className="match-team-side match-team-europe"><div className="match-team-label">🇪🇺 EUROPE</div><strong>{teamNames(m.b)}</strong><small style={{display:"block",marginTop:6,opacity:.85,fontSize:12}}>{matchPops(m.b)}</small></div>
             </div>
             {matchRound?.format === "stableford" && <p className="individual-points">{[...m.a,...m.b].map(id => `${names([id])}: ${x.individual[id] ?? 0} pts · ${stablefordNet(m,id)}`).join(" | ")}</p>}
             <div className="championship-match-footer">

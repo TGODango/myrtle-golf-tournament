@@ -157,8 +157,8 @@ export function result(s: State, m: Match) {
     totals[0] += a;
     totals[1] += b;
     played++;
-    lead += r.format === "stableford" ? 0 : Math.sign(b - a);
-    if (r.format !== "stableford" && Math.abs(lead) > 18 - played) {
+    lead += Math.sign(b - a);
+    if (Math.abs(lead) > 18 - played) {
       decided = true;
       final =
         played === 18

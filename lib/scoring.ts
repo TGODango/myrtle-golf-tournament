@@ -127,7 +127,7 @@ export function result(s: State, m: Match) {
   let decided = false;
   let final = "";
   for (let n = 0; n < 18 && r.format !== "stableford"; n++) {
-    if (r.format === "scramble" ? ![m.a[0],m.b[0]].every(id => s.scores[key(m.id,id,n)]) : !ids.every(id => s.scores[key(m.id,id,n)])) break;
+    if (r.format === "scramble" ? ![m.a[0],m.b[0]].every(id => s.scores[key(m.id,id,n)]) : !ids.every(id => s.scores[key(m.id,id,n)])) continue;
     if (r.format === "scramble") {
       const a = s.scores[key(m.id,m.a[0],n)].gross - strokes(scrambleHandicap(m.a)-lowScramble,r.holes[n].rank);
       const b = s.scores[key(m.id,m.b[0],n)].gross - strokes(scrambleHandicap(m.b)-lowScramble,r.holes[n].rank);
@@ -185,6 +185,9 @@ export function result(s: State, m: Match) {
         ? [1, 0]
         : [0, 1]
     : [0, 0];
+  const leaderName = r.format === "singles"
+    ? s.players.find(p => p.id === (lead > 0 ? m.a[0] : m.b[0]))!.name
+    : s.teams[lead > 0 ? 0 : 1].name;
   const status =
     m.manual != null && !m.reopened
       ? m.manual === 0.5
@@ -192,12 +195,12 @@ export function result(s: State, m: Match) {
         : `${s.teams[m.manual === 1 ? 0 : 1].name} wins · adjudicated`
       : r.format === "stableford"
         ? `${totals[0]} – ${totals[1]} pts`
-        : final ||
+        : (final ? (r.format === "singles" ? `${leaderName} wins ${final}` : final) : "") ||
           (played === 18 && lead === 0
             ? "Halved"
             : lead === 0
               ? "All Square"
-              : `${s.teams[lead > 0 ? 0 : 1].name} ${Math.abs(lead)} UP`);
+              : `${leaderName} ${Math.abs(lead)} UP`);
   return { played, lead, complete, points, status, totals, individual, winner };
 }
 export function standings(s: State) {

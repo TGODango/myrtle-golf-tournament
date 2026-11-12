@@ -107,3 +107,16 @@ test("reopened match removes earned points", () => {
   m.reopened = true;
   assert.deepEqual(result(s, m).points, [0, 0]);
 });
+
+test("singles counts back-nine scores while front nine is unentered", () => {
+  const { s, m } = fixture("singles", 4, 4, 0);
+  s.scores[key(m.id,m.a[0],9)] = {gross:4,version:1};
+  s.scores[key(m.id,m.b[0],9)] = {gross:5,version:1};
+  assert.equal(result(s,m).played,1);
+  assert.equal(result(s,m).lead,1);
+  assert.equal(result(s,m).complete,false);
+  s.scores[key(m.id,m.a[0],11)] = {gross:6,version:1};
+  s.scores[key(m.id,m.b[0],11)] = {gross:4,version:1};
+  assert.equal(result(s,m).played,2);
+  assert.equal(result(s,m).lead,0);
+});

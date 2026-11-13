@@ -1,6 +1,6 @@
 "use client";
-type Props = { onArchive: () => void; onTrip: () => void };
-export default function SeasonHome({ onArchive, onTrip }: Props) {
+type Props = { onArchive: () => void; onTrip: () => void; onPhotos: () => void };
+export default function SeasonHome({ onArchive, onTrip, onPhotos }: Props) {
   return <div className="season-home">
     <div className="season-heading"><span className="season-kicker">DANGO GOLF · MYRTLE BEACH</span><span className="season-year">EST. 2026</span></div>
     <section className="champions-hero">
@@ -9,7 +9,7 @@ export default function SeasonHome({ onArchive, onTrip }: Props) {
     </section>
     <section className="next-season">
       <div className="next-season-year" aria-hidden="true">2027</div>
-      <div className="next-season-copy"><span className="season-kicker">NEXT CHAPTER · COMING SOON</span><h2>The rematch is coming.</h2><p>New trip. Same rivalry. The 2027 Myrtle Beach trip is on the horizon—watch here for announcements.</p><div className="season-actions"><button className="primary" onClick={onTrip}>2027 trip updates ↗</button><button onClick={onArchive}>Relive the 2026 championship →</button></div></div>
+      <div className="next-season-copy"><span className="season-kicker">NEXT CHAPTER · COMING SOON</span><h2>The rematch is coming.</h2><p>New trip. Same rivalry. The 2027 Myrtle Beach trip is on the horizon—watch here for announcements.</p><div className="season-actions"><button className="primary" onClick={onTrip}>2027 trip updates ↗</button><button onClick={onPhotos}>2026 trip photos ↗</button><button onClick={onArchive}>Relive the 2026 championship →</button></div></div>
     </section>
     <section className="season-announcements"><div><span className="season-kicker">THE CLUBHOUSE</span><h2>Trip announcements</h2></div><article><span className="announcement-tag">2027 · COMING SOON</span><h3>Save the excitement. Dates come next.</h3><p>Dates, courses, lodging and the lineup will be announced here once plans are confirmed.</p><button onClick={onTrip}>See what's next →</button></article><article><span className="announcement-tag announcement-complete">2026 · IN THE BOOKS</span><h3>America wins. The memories stay.</h3><p>Five rounds, eighteen matches and a 9.5–8.5 finish. Explore the final results, scorecards, skins and payouts.</p><button onClick={onArchive}>Open the 2026 archive →</button></article></section>
   </div>;

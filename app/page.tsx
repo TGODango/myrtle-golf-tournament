@@ -24,12 +24,13 @@ import { blank } from "../lib/demo";
 import { cloud } from "../lib/cloud";
 import GolferLoginManagement from "./components/GolferLoginManagement";
 import LodgingDirections from "./components/LodgingDirections";
+import TripPhotos from "./components/TripPhotos";
 import SeasonHome, { Trip2027 } from "./components/SeasonHome";
 import { uploadedScorecards } from "../lib/course-scorecards";
 import { liveSkins, moneyLeaderboard, prizeSettings, roundSkins } from "../lib/money";
 // Completed seasons are viewed from a frozen member-only archive.
 const ARCHIVED = true;
-const nav = ["Home", "2027 Trip", "Tournament Results", "Live Leaderboard", "Live Skin Winners", "Money Center", "Course Scorecards", "Teams", "Schedule", "Lodging & Directions"];
+const nav = ["Home", "2027 Trip", "2026 Photos", "Tournament Results", "Live Leaderboard", "Live Skin Winners", "Money Center", "Course Scorecards", "Teams", "Schedule", "Lodging & Directions"];
 const navLabel: Record<string,string> = {
   "Tournament Results": "2026 Results", "Live Leaderboard": "2026 Match Scorecards",
   "Live Skin Winners": "2026 Skin Winners", "Money Center": "2026 Payouts",
@@ -484,7 +485,7 @@ export default function App() {
               <button onClick={() => setNotice("")}>×</button>
             </div>
           )}
-          {page === "Home" ? <SeasonHome onArchive={() => setPage("Tournament Results")} onTrip={() => setPage("2027 Trip")} /> : page === "2027 Trip" ? <Trip2027 onArchive={() => setPage("Tournament Results")} /> : !user ? (
+          {page === "Home" ? <SeasonHome onPhotos={() => setPage("2026 Photos")} onArchive={() => setPage("Tournament Results")} onTrip={() => setPage("2027 Trip")} /> : page === "2027 Trip" ? <Trip2027 onArchive={() => setPage("Tournament Results")} /> : !user ? (
             <section className="panel">
               <h1>2026 Championship Archive</h1>
               <p>Sign in with your existing phone number and tournament code to view the final results, scorecards, skins and payouts.</p>
@@ -560,6 +561,7 @@ export default function App() {
                   <ArrowUpRight size={15} />
                 </button>
               </div>
+              {page === "2026 Photos" && <TripPhotos />}
               {["Live Leaderboard", "Tournament Results"].includes(
                 page,
               ) && (

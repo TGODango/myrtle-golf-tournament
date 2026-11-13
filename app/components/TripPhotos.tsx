@@ -1,5 +1,6 @@
 "use client";
 import { useRef, useState } from "react";
+import CommunityMedia from "./CommunityMedia";
 import { tripPhotos } from "../../lib/trip-photos";
 
 export default function TripPhotos() {
@@ -11,6 +12,7 @@ export default function TripPhotos() {
   }
   return <section className="trip-photos">
     <div className="panel"><span className="season-kicker">2026 · MYRTLE BEACH</span><h2>The trip in pictures.</h2><p>On the course, at the clubhouse and everything in between. Tap a photo to see the full picture.</p><span>{tripPhotos.length} photos · November 2026</span></div>
+    <CommunityMedia />
     <div className="trip-photo-grid">{tripPhotos.map((item, index) => <button className="trip-photo-tile" key={item.src} aria-label={`Enlarge photo ${index + 1}`} onClick={() => { setSelected(index); dialog.current?.showModal(); }}><img src={item.thumbnail} alt={item.alt} width={item.width} height={item.height} loading="lazy" /><span>View photo ↗</span></button>)}</div>
     <dialog ref={dialog} className="trip-photo-dialog" aria-label="2026 Myrtle Beach photo viewer" onClick={event => { if(event.target === dialog.current) dialog.current.close(); }} onKeyDown={event => { if(event.key === "ArrowLeft") move(-1); if(event.key === "ArrowRight") move(1); }}>
       <div className="trip-photo-toolbar"><span>{selected + 1} / {tripPhotos.length}</span><button autoFocus aria-label="Close photo viewer" onClick={() => dialog.current?.close()}>Close ×</button></div>

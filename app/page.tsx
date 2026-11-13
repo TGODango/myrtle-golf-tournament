@@ -23,19 +23,23 @@ import {
 import { blank } from "../lib/demo";
 import { cloud } from "../lib/cloud";
 import GolferLoginManagement from "./components/GolferLoginManagement";
-import LodgingDirections from "./components/LodgingDirections";
 import TripPhotos from "./components/TripPhotos";
 import SeasonHome, { Trip2027 } from "./components/SeasonHome";
 import { uploadedScorecards } from "../lib/course-scorecards";
 import { liveSkins, moneyLeaderboard, prizeSettings, roundSkins } from "../lib/money";
 // Completed seasons are viewed from a frozen member-only archive.
 const ARCHIVED = true;
-const nav = ["Home", "2027 Trip", "2026 Photos", "Tournament Results", "Live Leaderboard", "Live Skin Winners", "Money Center", "Course Scorecards", "Teams", "Schedule", "Lodging & Directions"];
+const nav = ["2027 Trip", "Tournament Results", "2026 Photos"];
+const archiveNav = ["Tournament Results", "Live Leaderboard", "Live Skin Winners", "Money Center", "Course Scorecards", "Teams", "Schedule"];
+const archiveLabel: Record<string,string> = {
+  "Tournament Results": "Overview", "Live Leaderboard": "Match Scorecards",
+  "Live Skin Winners": "Skins", "Money Center": "Payouts",
+  "Course Scorecards": "Courses", "Teams": "Teams", "Schedule": "Rounds",
+};
 const navLabel: Record<string,string> = {
   "Tournament Results": "2026 Results", "Live Leaderboard": "2026 Match Scorecards",
   "Live Skin Winners": "2026 Skin Winners", "Money Center": "2026 Payouts",
   "Course Scorecards": "2026 Courses", "Teams": "2026 Teams", "Schedule": "2026 Schedule",
-  "Lodging & Directions": "2026 Lodging & Directions",
 };
 const formats = {
   bestball: "Best Ball Match Play",
@@ -438,22 +442,22 @@ export default function App() {
       </div>}
       {!tv && (
         <aside className={mobile ? "open" : ""}>
-          <div className="brand dango-brand">
+          <button type="button" className="brand dango-brand brand-home" onClick={() => { setPage("Home"); setMobile(false); }} aria-label="Dango Golf home">
             <img src="/dangogolf-approved.webp" alt="DangoGolf" />
             <small>MYRTLE BEACH CHAMPIONSHIP</small>
-          </div>
+          </button>
           
           <nav>
             {nav.map((n, i) => (
               <button
-                className={page === n ? "active" : ""}
+                className={page === n || (n === "Tournament Results" && archiveNav.includes(page)) ? "active" : ""}
                 key={n}
                 onClick={() => {
                   setPage(n);
                   setMobile(false);
                 }}
               >
-                <span className={i % 3 === 0 ? "nav-icon-gold" : "nav-icon-white"}>{["✎", "▥", "★", "⚑", "▦", "⌂", "♧", "⇄", "♜", "🏆", "$", "⌂", "⚙"][i]}</span>
+                <span className={i % 3 === 0 ? "nav-icon-gold" : "nav-icon-white"}>{["⚑", "🏆", "▦"][i]}</span>
                 {navLabel[n] ?? n}
               </button>
             ))}
@@ -536,7 +540,8 @@ export default function App() {
             </section>
           ) : !archiveLoaded ? <section className="panel"><h1>2026 Championship Archive</h1><p>{notice ? "Unable to load the archive. Please retry." : "Loading the final championship results…"}</p><button onClick={() => load()}>Reload archive</button></section> : (
             <>
-              <div className="archive-notice"><span>2026 ARCHIVE · READ-ONLY</span><a href="/">Back to Dango Golf ↗</a></div>
+              <div className="archive-notice"><span>{page === "2026 Photos" ? "2026 MYRTLE BEACH · GROUP ALBUM" : "2026 RESULTS · FINAL"}</span><a href="/">Back to Dango Golf ↗</a></div>
+              {archiveNav.includes(page) && <nav className="archive-tabs" aria-label="2026 results sections">{archiveNav.map(section => <button key={section} className={page === section ? "active" : ""} aria-current={page === section ? "page" : undefined} onClick={() => setPage(section)}>{archiveLabel[section]}</button>)}</nav>}
               <div className="page-title">
                 <div>
                   <h1>{navLabel[page] ?? page}</h1>
@@ -715,7 +720,6 @@ export default function App() {
                   ))}
                 </div>
               )}
-              {page === "Lodging & Directions" && <LodgingDirections rounds={s.rounds} />}
               {page === "Schedule" && (
                 <div className="schedule">
                   {s.rounds.map((x, i) => (

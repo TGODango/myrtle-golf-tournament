@@ -1372,3 +1372,42 @@ label select {
 /* Keep the replay action unobtrusive and below all sidebar navigation */
 .shell:not(.tv) aside .sidebar-replay-bottom{margin-top:auto;padding-top:24px;padding-bottom:5px;flex-shrink:0}
 .shell:not(.tv) aside .sidebar-replay-bottom .intro-replay{margin:0;width:100%;font-size:10px;letter-spacing:0;white-space:normal;min-height:42px}
+
+/* Off-season clubhouse and championship archive */
+.season-home{max-width:1180px;margin:auto;padding-bottom:40px;color:#102b30}
+.season-heading{display:flex;justify-content:space-between;align-items:center;gap:16px;margin:5px 0 22px}
+.season-kicker{font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;line-height:1.6}
+.season-year{font-size:11px;letter-spacing:2px;color:#687a7e}
+.champions-hero{overflow:hidden;border-radius:20px;background:#0b213e;box-shadow:0 16px 45px #0b213e18}
+.champions-hero>img{display:block;width:100%;height:auto}
+.champions-caption{padding:25px 30px;display:flex;align-items:center;justify-content:space-between;gap:24px;color:#fff}
+.champions-caption .season-kicker{color:#d5b56a}
+.champions-caption h1{font-size:clamp(24px,3vw,36px);letter-spacing:-1px;line-height:1.15;margin:8px 0 0}
+.season-final{display:flex;align-items:center;gap:15px;flex-shrink:0}
+.season-final span{display:flex;flex-direction:column;gap:6px;font-size:10px;font-weight:800;letter-spacing:1px;text-align:center}
+.season-final b{font-size:40px;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-1px}
+.season-final i{font-size:30px;font-style:normal;color:#d5b56a}
+.next-season{position:relative;isolation:isolate;overflow:hidden;background:#e7ecdf;border:1px solid #cdd6bd;border-radius:20px;padding:46px 38px;margin:26px 0}
+.next-season-year{position:absolute;right:-6px;bottom:-34px;font-size:clamp(135px,24vw,280px);font-weight:900;line-height:1;letter-spacing:-15px;color:#bcc9aa;opacity:.45;z-index:-1;pointer-events:none}
+.next-season-copy{max-width:650px}
+.next-season h2,.next-season h1{font-size:clamp(32px,4.5vw,54px);letter-spacing:-2px;line-height:1.05;margin:13px 0 18px}
+.next-season p{font-size:16px;line-height:1.8;max-width:530px;color:#43584b;margin-bottom:24px}
+.season-actions{display:flex;flex-wrap:wrap;gap:12px}
+.season-actions button{padding:14px 18px;border-radius:9px;font-size:13px}
+.season-actions .primary{background:#132e2b;color:#fff;border-color:#132e2b}
+.season-announcements{display:grid;grid-template-columns:.8fr 1.1fr 1.1fr;gap:22px;margin-top:40px;align-items:start}
+.season-announcements h2{font-size:26px;letter-spacing:-1px;margin-top:10px}
+.season-announcements article{background:white;border:1px solid #dbe2e7;border-radius:14px;padding:24px;min-width:0}
+.announcement-tag{display:inline-block;font-size:10px;letter-spacing:1px;font-weight:800;color:#153c33;background:#e8eedf;border-radius:5px;padding:7px 10px}
+.announcement-complete{background:#e9edf6;color:#172c53}
+.season-announcements h3{font-size:20px;line-height:1.3;letter-spacing:-.5px;margin:18px 0 10px}
+.season-announcements p{font-size:14px;line-height:1.8;color:#66757d}
+.season-announcements button{border:0;background:none;padding:10px 0 0;font-size:12px;font-weight:800;color:#183f35;text-align:left}
+.trip-coming-soon{min-height:300px;margin-top:0;display:flex;align-items:center}
+.trip-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.trip-detail-grid h2{font-size:21px;margin-top:12px}
+.archive-notice{display:flex;justify-content:space-between;gap:14px;align-items:center;border:1px solid #d3dcc9;background:#e9eedf;border-radius:10px;padding:14px 18px;margin-bottom:24px;font-size:11px;font-weight:800;letter-spacing:1px;color:#36513a}
+.archive-notice a{color:inherit;font-size:11px;letter-spacing:0;text-decoration:none}
+.season-header-link{font-size:10px;font-weight:800;letter-spacing:1px;border:0;background:#e9eedf;color:#36513a;padding:8px 10px;border-radius:6px}
+@media(max-width:800px){.season-announcements{grid-template-columns:1fr 1fr}.season-announcements>div{grid-column:1/-1}.champions-caption{padding:24px;flex-direction:column;align-items:flex-start;gap:20px}.season-final{width:100%;justify-content:flex-start;gap:24px}.season-final span{flex-direction:row;align-items:center;gap:12px}.season-final b{font-size:32px}.next-season{padding:32px 26px}.season-heading{margin-bottom:16px}.season-kicker{font-size:10px;letter-spacing:1.5px}}
+@media(max-width:480px){.season-announcements{grid-template-columns:1fr;gap:15px;margin-top:28px}.champions-hero{border-radius:12px}.champions-caption{padding:20px}.season-final{gap:12px}.season-final span{font-size:9px;gap:8px}.season-final b{font-size:29px}.next-season{padding:30px 22px;border-radius:12px}.next-season-year{bottom:-18px;letter-spacing:-9px}.season-actions{flex-direction:column;align-items:stretch}.season-actions button{text-align:center}.trip-detail-grid{gap:12px}.trip-detail-grid .panel{padding:18px}.trip-detail-grid h2{font-size:18px}.archive-notice{align-items:flex-start;flex-direction:column;font-size:10px}.season-year{font-size:9px;white-space:nowrap}.season-heading .season-kicker{font-size:9px;letter-spacing:1px}}

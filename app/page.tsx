@@ -24,24 +24,18 @@ import { blank } from "../lib/demo";
 import { cloud } from "../lib/cloud";
 import GolferLoginManagement from "./components/GolferLoginManagement";
 import LodgingDirections from "./components/LodgingDirections";
-import TripCountdown from "./components/TripCountdown";
+import SeasonHome, { Trip2027 } from "./components/SeasonHome";
 import { uploadedScorecards } from "../lib/course-scorecards";
 import { liveSkins, moneyLeaderboard, prizeSettings, roundSkins } from "../lib/money";
-const nav = [
-  "Live Scoring",
-  "Live Leaderboard",
-  "Live Skin Winners",
-  "Today's Matches",
-  "Schedule",
-  "Lodging & Directions",
-  "Course Scorecards",
-  "Teams",
-  "Matchup Draft",
-  "Tournament Results",
-  "Money Center",
-  "Home",
-  "Admin Dashboard",
-];
+// Completed seasons are viewed from a frozen member-only archive.
+const ARCHIVED = true;
+const nav = ["Home", "2027 Trip", "Tournament Results", "Live Leaderboard", "Live Skin Winners", "Money Center", "Course Scorecards", "Teams", "Schedule", "Lodging & Directions"];
+const navLabel: Record<string,string> = {
+  "Tournament Results": "2026 Results", "Live Leaderboard": "2026 Match Scorecards",
+  "Live Skin Winners": "2026 Skin Winners", "Money Center": "2026 Payouts",
+  "Course Scorecards": "2026 Courses", "Teams": "2026 Teams", "Schedule": "2026 Schedule",
+  "Lodging & Directions": "2026 Lodging & Directions",
+};
 const formats = {
   bestball: "Best Ball Match Play",
   stableford: "Combined Stableford",
@@ -51,7 +45,7 @@ const formats = {
 };
 export default function App() {
   const [s, setS] = useState<State>(blank()),
-    [page, setPage] = useState("Live Scoring"),
+    [page, setPage] = useState("Home"),
     [round, setRound] = useState("r0"),
     [player, setPlayer] = useState("p0"),
     [hole, setHole] = useState(0),
@@ -68,6 +62,7 @@ export default function App() {
     [tv, setTv] = useState(false),
     [mobile, setMobile] = useState(false),
     [showIntro, setShowIntro] = useState(false),
+    [archiveLoaded, setArchiveLoaded] = useState(false),
     [expandedLeaderboardMatch, setExpandedLeaderboardMatch] = useState<string | null>(null),
     [pending, setPending] = useState<
       {
@@ -80,16 +75,9 @@ export default function App() {
       }[]
     >([]);
   useEffect(() => {
-    // Show twice per browser/device, including devices that have already logged in.
-    try {
-      const visits = Number(localStorage.getItem("dango-intro-views-v1") || "0");
-      if (visits < 2) {
-        setShowIntro(true);
-        localStorage.setItem("dango-intro-views-v1", String(visits + 1));
-      }
-    } catch {
-      setShowIntro(true);
-    }
+    const view = new URLSearchParams(window.location.search).get("view");
+    if (view === "2026") setPage("Tournament Results");
+    if (view === "2027") setPage("2027 Trip");
   }, []);
   useEffect(() => {
     if (!showIntro) return;
@@ -106,8 +94,8 @@ export default function App() {
       if (Number.isInteger(n) && n >= 0 && n < 18) setHole(n);
     }
   }, [round, player]);
-  const admin = role === "admin";
-  const captain = admin || role === "captain";
+  const admin = !ARCHIVED && role === "admin";
+  const captain = !ARCHIVED && (admin || role === "captain");
   useEffect(() => {
     const change = () => setOnline(navigator.onLine);
     window.addEventListener("online", change);
@@ -118,6 +106,7 @@ export default function App() {
     };
   }, []);
   useEffect(() => {
+    if (ARCHIVED) return;
     const saved = localStorage.getItem("myrtle-score-queue");
     if (saved)
       try {
@@ -125,11 +114,11 @@ export default function App() {
       } catch {}
   }, []);
   useEffect(() => {
-    localStorage.setItem("myrtle-score-queue", JSON.stringify(pending));
+    if (!ARCHIVED) localStorage.setItem("myrtle-score-queue", JSON.stringify(pending));
   }, [pending]);
   async function load() {
     if (!cloud) return;
-    const { data, error } = await cloud.rpc("read_tournament");
+    const { data, error } = await cloud.from("tournament_archives").select("state,revision").eq("year",2026).single();
     if (error) {
       setNotice(error.message);
       return;
@@ -137,6 +126,7 @@ export default function App() {
     if (data) {
       setS(data.state);
       setRev(data.revision);
+      setArchiveLoaded(true);
     }
   }
   useEffect(() => {
@@ -189,7 +179,7 @@ export default function App() {
     };
   }, []);
   async function send(item: (typeof pending)[number]) {
-    if (!cloud) return false;
+    if (!cloud || ARCHIVED) return false;
     const { error } = await cloud.rpc("submit_score", {
       p_match: item.match,
       p_player: item.player,
@@ -225,6 +215,7 @@ export default function App() {
     };
   }, [online, user, pending.length, pending[0]?.request]);
   async function update(next: State, message: string) {
+    if (ARCHIVED) { setNotice("The 2026 tournament is archived and read-only."); return; }
     next = {
       ...next,
       audit: [{ at: new Date().toISOString(), message }, ...next.audit],
@@ -462,7 +453,7 @@ export default function App() {
                 }}
               >
                 <span className={i % 3 === 0 ? "nav-icon-gold" : "nav-icon-white"}>{["✎", "▥", "★", "⚑", "▦", "⌂", "♧", "⇄", "♜", "🏆", "$", "⌂", "⚙"][i]}</span>
-                {n}
+                {navLabel[n] ?? n}
               </button>
             ))}
           </nav>
@@ -475,10 +466,10 @@ export default function App() {
             <Menu />
           </button>
           <span>
-            MYRTLE BEACH <span className="muted">/ {page}</span>
+            MYRTLE BEACH <span className="muted">/ {navLabel[page] ?? page}</span>
           </span>
           <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-            <TripCountdown compact />
+            <button className="season-header-link" onClick={() => setPage("2027 Trip")}>2027 · COMING SOON ↗</button>
             <span className="connection">
               <i />
               {online ? "CONNECTED" : "OFFLINE"}
@@ -493,10 +484,10 @@ export default function App() {
               <button onClick={() => setNotice("")}>×</button>
             </div>
           )}
-          {!user ? (
+          {page === "Home" ? <SeasonHome onArchive={() => setPage("Tournament Results")} onTrip={() => setPage("2027 Trip")} /> : page === "2027 Trip" ? <Trip2027 onArchive={() => setPage("Tournament Results")} /> : !user ? (
             <section className="panel">
-              <h1>Your championship starts here.</h1>
-              <p>Enter your registered phone number and tournament code.</p>
+              <h1>2026 Championship Archive</h1>
+              <p>Sign in with your existing phone number and tournament code to view the final results, scorecards, skins and payouts.</p>
               <form onSubmit={async (e) => {
                 e.preventDefault();
                 if (!cloud || signingIn) return;
@@ -527,7 +518,7 @@ export default function App() {
                   placeholder="4-digit tournament code" aria-label="Tournament code"
                   value={passcode} onChange={(e) => setPasscode(e.target.value)} required />
                 <button type="submit" className="primary" disabled={signingIn}>
-                  {signingIn ? "Signing in…" : "Enter Tournament"}
+                  {signingIn ? "Signing in…" : "View 2026 Archive"}
                 </button>
               </form>
               <details style={{ marginTop: 24 }}>
@@ -542,11 +533,12 @@ export default function App() {
                 }}>Send sign-in link</button>
               </details>
             </section>
-          ) : (
+          ) : !archiveLoaded ? <section className="panel"><h1>2026 Championship Archive</h1><p>{notice ? "Unable to load the archive. Please retry." : "Loading the final championship results…"}</p><button onClick={() => load()}>Reload archive</button></section> : (
             <>
+              <div className="archive-notice"><span>2026 ARCHIVE · READ-ONLY</span><a href="/">Back to Dango Golf ↗</a></div>
               <div className="page-title">
                 <div>
-                  <h1>{page === "Home" ? "The road to 9½." : page}</h1>
+                  <h1>{navLabel[page] ?? page}</h1>
                   <p>
                     Myrtle Beach Golf Championship 2026 <span>•</span> 12
                     golfers <span>•</span> 5 rounds <span>•</span> 18 points
@@ -568,7 +560,7 @@ export default function App() {
                   <ArrowUpRight size={15} />
                 </button>
               </div>
-              {["Home", "Live Leaderboard", "Tournament Results"].includes(
+              {["Live Leaderboard", "Tournament Results"].includes(
                 page,
               ) && (
                 <>
@@ -615,74 +607,6 @@ export default function App() {
                         {Math.max(0, 9.5 - totals.official[1])}
                       </b>
                     </div>
-                  </div>
-                </>
-              )}
-              {page === "Home" && (
-                <>
-                  <TripCountdown />
-                  <div className="section-heading">
-                    <h2>On the course</h2>
-                    <button onClick={() => setPage("Today's Matches")}>
-                      All matches <ChevronRight size={16} />
-                    </button>
-                  </div>
-                  <div className="home-grid">
-                    <section className="course-feature">
-                      <div className="eyebrow">
-                        ROUND {s.rounds.indexOf(r) + 1} ·{" "}
-                        {r.date || "DATE TO BE CONFIRMED"}
-                      </div>
-                      <Flag size={40} />
-                      <h2>{r.name}</h2>
-                      <p>{formats[r.format]}</p>
-                      <div className="course-meta">
-                        <span>
-                          NEXT TEE TIME
-                          <b>
-                            {r.date === localDate
-                              ? (r.times.find((t) => t >= localTime) ??
-                                "All started")
-                              : r.times[0]}
-                          </b>
-                          <small>America/New_York</small>
-                        </span>
-                        <button
-                          className="primary"
-                          onClick={() => setPage("Live Scoring")}
-                        >
-                          Enter scores <ArrowUpRight size={18} />
-                        </button>
-                      </div>
-                    </section>
-                    <div className="match-list">
-                      {matches.slice(0, 3).map(card)}
-                    </div>
-                  </div>
-                  <div className="section-heading">
-                    <h2>The championship journey</h2>
-                    <button onClick={() => setPage("Schedule")}>
-                      Full schedule <ChevronRight size={16} />
-                    </button>
-                  </div>
-                  <div className="journey">
-                    {s.rounds.map((r, i) => (
-                      <button
-                        key={r.id}
-                        onClick={() => {
-                          setRound(r.id);
-                          setPage("Today's Matches");
-                        }}
-                      >
-                        <small>ROUND 0{i + 1}</small>
-                        <h3>{r.name}</h3>
-                        <p>{formats[r.format]}</p>
-                        <b>
-                          {i === 4 ? "6" : "3"} points{" "}
-                          <ArrowUpRight size={14} />
-                        </b>
-                      </button>
-                    ))}
                   </div>
                 </>
               )}

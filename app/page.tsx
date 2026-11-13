@@ -489,7 +489,7 @@ export default function App() {
               <button onClick={() => setNotice("")}>×</button>
             </div>
           )}
-          {page === "Home" ? <SeasonHome onPhotos={() => setPage("2026 Photos")} onArchive={() => setPage("Tournament Results")} onTrip={() => setPage("2027 Trip")} /> : page === "2027 Trip" ? <Trip2027 onArchive={() => setPage("Tournament Results")} /> : !user ? (
+          {page === "Home" ? <SeasonHome /> : page === "2027 Trip" ? <Trip2027 /> : !user ? (
             <section className="panel">
               <h1>2026 Championship Archive</h1>
               <p>Sign in with your existing phone number and tournament code to view the final results, scorecards, skins and payouts.</p>
